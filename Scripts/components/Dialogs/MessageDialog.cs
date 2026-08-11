@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class MessageDialog : ReferenceRect
+public partial class MessageDialog   : ReferenceRect
 {
 #region Node Paths
     [NodePath("PC/CC/P/VB/MCContent/VC/Title")]

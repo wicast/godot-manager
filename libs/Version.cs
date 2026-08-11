@@ -1,4 +1,4 @@
-public static class VERSION {
+public static partial class VERSION {
 	public static string GodotManager = "0.2.1";
 	public static string Channel = "dev";
 	public static string GodotSharpExtras = "0.3.4";

@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class ProjectPopup : PopupMenu
+public partial class ProjectPopup   : PopupMenu
 {
     public ProjectLineEntry ProjectLineEntry = null;
     public ProjectIconEntry ProjectIconEntry = null;

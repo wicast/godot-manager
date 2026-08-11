@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using System.IO.Compression;
 using SFile = System.IO.File;
 
-public class AddonInstaller : ReferenceRect
+public partial class AddonInstaller   : ReferenceRect
 {
 #region Node Paths
     [NodePath("PC/CC/P/VB/MCContent/VB/DetailLabel")]
@@ -29,34 +29,34 @@ public class AddonInstaller : ReferenceRect
 #endregion
 
 #region Icon Registry
-    Texture ift_image = GD.Load<Texture>("res://Assets/Icons/icon_ft_image.svg");
-    Texture ift_audio = GD.Load<Texture>("res://Assets/Icons/icon_ft_audio.svg");
-    Texture ift_packedscene = GD.Load<Texture>("res://Assets/Icons/icon_ft_packed_scene.svg");
-    Texture ift_shader = GD.Load<Texture>("res://Assets/Icons/icon_ft_shader.svg");
-    Texture ift_gdscript = GD.Load<Texture>("res://Assets/Icons/icon_ft_gdscript.svg");
-    Texture ift_csharp = GD.Load<Texture>("res://Assets/Icons/icon_ft_csharp.svg");
-    Texture ift_visualscript = GD.Load<Texture>("res://Assets/Icons/icon_ft_visualscript.svg");
-    Texture ift_resource = GD.Load<Texture>("res://Assets/Icons/icon_ft_resource.svg");
-    Texture ift_atlastexture = GD.Load<Texture>("res://Assets/Icons/icon_ft_atlas_texture.svg");
-    Texture ift_mesh = GD.Load<Texture>("res://Assets/Icons/icon_ft_mesh.svg");
-    Texture ift_text = GD.Load<Texture>("res://Assets/Icons/icon_ft_text.svg");
-    Texture ift_font = GD.Load<Texture>("res://Assets/Icons/icon_ft_font.svg");
-    Texture ift_object = GD.Load<Texture>("res://Assets/Icons/icon_ft_object.svg");
-    Texture ift_file = GD.Load<Texture>("res://Assets/Icons/icon_ft_file.svg");
-    Texture ift_folder = GD.Load<Texture>("res://Assets/Icons/icon_ft_folder.svg");
+    Texture2D ift_image = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_image.svg");
+    Texture2D ift_audio = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_audio.svg");
+    Texture2D ift_packedscene = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_packed_scene.svg");
+    Texture2D ift_shader = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_shader.svg");
+    Texture2D ift_gdscript = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_gdscript.svg");
+    Texture2D ift_csharp = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_csharp.svg");
+    Texture2D ift_visualscript = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_visualscript.svg");
+    Texture2D ift_resource = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_resource.svg");
+    Texture2D ift_atlastexture = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_atlas_texture.svg");
+    Texture2D ift_mesh = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_mesh.svg");
+    Texture2D ift_text = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_text.svg");
+    Texture2D ift_font = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_font.svg");
+    Texture2D ift_object = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_object.svg");
+    Texture2D ift_file = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_file.svg");
+    Texture2D ift_folder = GD.Load<Texture2D>("res://Assets/Icons/icon_ft_folder.svg");
 
-    Dictionary<string, Texture> IconRegistry = null;
+    Dictionary<string, Texture2D> IconRegistry = null;
 
     Array<string> IgnoreFiles = null;
 #endregion
 
-    void AddRegistry(string[] exts, Texture icon) {
+    void AddRegistry(string[] exts, Texture2D icon) {
         foreach (string ext in exts)
             IconRegistry.Add(ext, icon);
     }
 
     void InitRegistry() {
-        IconRegistry = new Dictionary<string, Texture>();
+        IconRegistry = new Dictionary<string, Texture2D>();
         // Image Formats
         AddRegistry(new string[] {".bmp",".dds",".exr",".hdr",".jpg",".jpeg",".png",".svg",".svgz",".tga",".webp"}, ift_image);
         // Audio Formats
@@ -115,8 +115,9 @@ public class AddonInstaller : ReferenceRect
         // Code "Copied" from Godot editor_asset_installer.cpp
         item.SetChecked(0, check);
 
-        if (item.GetChildren() != null) {
-            UpdateSubitems(item.GetChildren(), check);
+        Array<TreeItem> children = item.GetChildren();
+        foreach (TreeItem child in children) {
+            UpdateSubitems(child, check);
         }
 
         if (!first && item.GetNext() != null) {
@@ -130,13 +131,12 @@ public class AddonInstaller : ReferenceRect
             return;
         
         bool any_checked = false;
-        TreeItem citem = item.GetChildren();
-        while (citem != null) {
+        Array<TreeItem> children = item.GetChildren();
+        foreach (TreeItem citem in children) {
             if (citem.IsChecked(0)) {
                 any_checked = true;
                 break;
             }
-            citem = citem.GetNext();
         }
 
         if (!any_checked) {
@@ -173,7 +173,7 @@ public class AddonInstaller : ReferenceRect
 
         _updating = true;
 
-        string path = item.GetMetadata(0) as string;
+        string path = item.GetMetadata(0).AsString();
 
         if (item.GetCustomColor(0) == new Color(1,0,0)) {
             if (item.IsChecked(0)) {
@@ -232,7 +232,7 @@ public class AddonInstaller : ReferenceRect
             if (path == "")
                 continue;
 
-            int pp = path.FindLast("/");
+            int pp = path.LastIndexOf("/");
 
             TreeItem parent;
             if (pp == -1) {

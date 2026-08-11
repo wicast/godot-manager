@@ -3,7 +3,7 @@ using Godot.Sharp.Extras;
 using Godot.Collections;
 using System.Threading.Tasks;
 
-public class AssetLibEntry : ColorRect
+public partial class AssetLibEntry   : ColorRect
 {
 #region Node Paths
     [NodePath("hc/Icon")]
@@ -29,7 +29,7 @@ public class AssetLibEntry : ColorRect
 #endregion
 
 #region Private Variables
-    Texture tIcon;
+    Texture2D tIcon;
     string sTitle;
     string sCategory;
     string sLicense;
@@ -39,7 +39,7 @@ public class AssetLibEntry : ColorRect
 #endregion
 
 #region Public Accessors
-    public Texture Icon {
+    public Texture2D Icon {
         get { return (_icon != null ? _icon.Texture : tIcon); }
         set {
             tIcon = value;
@@ -125,13 +125,13 @@ public class AssetLibEntry : ColorRect
 
     [SignalHandler("mouse_exited")]
     void OnMouseExited() {
-        Color = new Color("002a2e37");
+        Color = new Color(0.1647f, 0.1804f, 0.2157f, 0); // was "002a2e37" (transparent in Godot 3, dark-green in Godot 4)
     }
 
     [SignalHandler("gui_input")]
     async void OnGuiInput(InputEvent inputEvent) {
         if (inputEvent is InputEventMouseButton iembEvent) {
-            if (iembEvent.Pressed && (ButtonList)iembEvent.ButtonIndex == ButtonList.Left)
+            if (iembEvent.Pressed && (MouseButton)iembEvent.ButtonIndex == MouseButton.Left)
             {
                 AssetLib.Asset asset = null;
                 if (!AssetId.StartsWith("local-")) {
@@ -165,9 +165,9 @@ public class AssetLibEntry : ColorRect
                     return;
                 }
                 AppDialogs.AssetLibPreview.ShowDialog(asset);
-                AppDialogs.AssetLibPreview.Connect("installed_addon", this, nameof(OnInstalledAddon));
-                AppDialogs.AssetLibPreview.Connect("preview_closed", this, nameof(OnPreviewClosed));
-                AppDialogs.AssetLibPreview.Connect("uninstalled_addon", this, nameof(OnUninstallAddon));
+                AppDialogs.AssetLibPreview.Connect("installed_addon", Callable.From<bool>(OnInstalledAddon));
+                AppDialogs.AssetLibPreview.Connect("preview_closed", Callable.From(OnPreviewClosed));
+                AppDialogs.AssetLibPreview.Connect("uninstalled_addon", Callable.From(OnUninstallAddon));
             }
         }
     }
@@ -214,8 +214,8 @@ public class AssetLibEntry : ColorRect
     }
 
     void OnPreviewClosed() {
-        AppDialogs.AssetLibPreview.Disconnect("installed_addon", this, nameof(OnInstalledAddon));
-        AppDialogs.AssetLibPreview.Disconnect("preview_closed", this, nameof(OnPreviewClosed));
-        AppDialogs.AssetLibPreview.Disconnect("uninstalled_addon", this, nameof(OnUninstallAddon));
+        AppDialogs.AssetLibPreview.Disconnect("installed_addon", Callable.From<bool>(OnInstalledAddon));
+        AppDialogs.AssetLibPreview.Disconnect("preview_closed", Callable.From(OnPreviewClosed));
+        AppDialogs.AssetLibPreview.Disconnect("uninstalled_addon", Callable.From(OnUninstallAddon));
     }
 }

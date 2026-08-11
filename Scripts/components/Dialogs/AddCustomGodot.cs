@@ -2,12 +2,12 @@ using Godot;
 using Godot.Sharp.Extras;
 using Guid = System.Guid;
 
-public class AddCustomGodot : ReferenceRect
+public partial class AddCustomGodot   : ReferenceRect
 {
 
 #region Signals
     [Signal]
-    public delegate void added_custom_godot();
+    public delegate void added_custom_godotEventHandler();
 #endregion
 
 #region Node Paths
@@ -39,7 +39,7 @@ public class AddCustomGodot : ReferenceRect
     public void ShowDialog() {
         _Name.Text = "";
         _Location.Text = "";
-        _MonoEnabled.Pressed = false;
+        _MonoEnabled.ButtonPressed = false;
         Visible = true;
     }
 #endregion
@@ -47,8 +47,8 @@ public class AddCustomGodot : ReferenceRect
 #region Events
     [SignalHandler("pressed", nameof(_Browse))]
     void OnBrowsePressed() {
-        AppDialogs.BrowseGodotDialog.Connect("file_selected", this, "OnFileSelected", null, (uint)ConnectFlags.Oneshot);
-        AppDialogs.BrowseGodotDialog.Connect("popup_hide", this, "OnBrowseDialogHidden", null, (uint)ConnectFlags.Oneshot);
+        AppDialogs.BrowseGodotDialog.Connect("file_selected", Callable.From<string>(OnFileSelected), (uint)ConnectFlags.OneShot);
+        AppDialogs.BrowseGodotDialog.Connect("popup_hide", Callable.From(OnBrowseDialogHidden), (uint)ConnectFlags.OneShot);
         AppDialogs.BrowseGodotDialog.PopupCentered();
     }
 
@@ -57,8 +57,8 @@ public class AddCustomGodot : ReferenceRect
     }
 
     void OnBrowseDialogHidden() {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("file_selected", this, "OnFileSelected"))
-            AppDialogs.BrowseGodotDialog.Disconnect("file_selected", this, "OnFileSelected");
+        if (AppDialogs.BrowseFolderDialog.IsConnected("file_selected", Callable.From<string>(OnFileSelected)))
+            AppDialogs.BrowseGodotDialog.Disconnect("file_selected", Callable.From<string>(OnFileSelected));
     }
 
     [SignalHandler("pressed", nameof(_AddBtn))]
@@ -80,7 +80,7 @@ public class AddCustomGodot : ReferenceRect
         gv.Location = _Location.Text.GetBaseDir();
         gv.ExecutableName = _Location.Text.GetFile();
 #endif
-        gv.IsMono = _MonoEnabled.Pressed;
+        gv.IsMono = _MonoEnabled.ButtonPressed;
         CentralStore.Versions.Add(gv);
         CentralStore.Instance.SaveDatabase();
         Visible = false;

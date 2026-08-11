@@ -6,7 +6,7 @@ using DateTime = System.DateTime;
 namespace Github {
 
 	[JsonObject(MemberSerialization.OptIn)]
-	public class Release : Object {
+	public partial class Release   : GodotObject {
 		[JsonProperty] public string Url;
 		[JsonProperty] public string HtmlUrl;
 		[JsonProperty] public string AssetsUrl;

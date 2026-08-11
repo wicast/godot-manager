@@ -4,13 +4,12 @@ using Godot;
 using Godot.Collections;
 using Godot.Sharp.Extras;
 using Directory = System.IO.Directory;
-using File = Godot.File;
 using Path = System.IO.Path;
 
 [SuppressMessage("ReSharper", "CheckNamespace")]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "RedundantDefaultMemberInitializer")]
-public class FirstRunWizard : ReferenceRect
+public partial class FirstRunWizard   : ReferenceRect
 {
     #region XDestkop String
 
@@ -32,7 +31,7 @@ StartupNotify=true
     #region Signals
 
     [Signal]
-    public delegate void wizard_completed();
+    public delegate void wizard_completedEventHandler();
 
     #endregion
 
@@ -146,49 +145,43 @@ StartupNotify=true
     [SignalHandler("pressed", nameof(EngineBrowse))]
     void OnPressed_EngineBrowse()
     {
-        AppDialogs.BrowseFolderDialog.WindowTitle = Tr("Location for Godot Engines");
+        AppDialogs.BrowseFolderDialog.Title = Tr("Location for Godot Engines");
         AppDialogs.BrowseFolderDialog.CurrentDir = EngineLoc.Text;
-        if (!AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, nameof(OnDirSelected_EngineBrowse)))
+        if (!AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected_EngineBrowse)))
         {
-            AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, nameof(OnDirSelected_EngineBrowse), null,
-                (int)ConnectFlags.Oneshot);
-            AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, nameof(OnPopupHide_EngineBrowse), null,
-                (int)ConnectFlags.Oneshot);
+            AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnDirSelected_EngineBrowse), (uint)ConnectFlags.OneShot);
+            AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnPopupHide_EngineBrowse), (uint)ConnectFlags.OneShot);
         }
 
-        AppDialogs.BrowseFolderDialog.PopupExclusive = true;
-        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2(510, 390));
+        AppDialogs.BrowseFolderDialog.Exclusive = true;
+        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2I(510, 390));
     }
 
     [SignalHandler("pressed", nameof(CacheBrowse))]
     void OnPressed_CacheBrowse()
     {
-        AppDialogs.BrowseFolderDialog.WindowTitle = Tr("Location for Cache Store");
+        AppDialogs.BrowseFolderDialog.Title = Tr("Location for Cache Store");
         AppDialogs.BrowseFolderDialog.CurrentDir = CacheLoc.Text;
-        if (!AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, nameof(OnDirSelected_CacheBrowse)))
+        if (!AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected_CacheBrowse)))
         {
-            AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, nameof(OnDirSelected_CacheBrowse), null,
-                    (int)ConnectFlags.Oneshot);
-            AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, nameof(OnPopupHide_CacheBrowse), null,
-                    (int)ConnectFlags.Oneshot);
+            AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnDirSelected_CacheBrowse), (uint)ConnectFlags.OneShot);
+            AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnPopupHide_CacheBrowse), (uint)ConnectFlags.OneShot);
         }
 
-        AppDialogs.BrowseFolderDialog.PopupExclusive = true;
-        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2(510, 390));
+        AppDialogs.BrowseFolderDialog.Exclusive = true;
+        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2I(510, 390));
     }
 
     [SignalHandler("pressed", nameof(ProjectBrowse))]
     void OnPressed_ProjectBrowse()
     {
-        AppDialogs.BrowseFolderDialog.WindowTitle = Tr("Location for Projects");
+        AppDialogs.BrowseFolderDialog.Title = Tr("Location for Projects");
         AppDialogs.BrowseFolderDialog.CurrentDir = ProjectLoc.Text;
-        AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, nameof(OnDirSelected_ProjectBrowse), null,
-            (int)ConnectFlags.Oneshot);
-        AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, nameof(OnPopupHide_ProjectBrowse), null,
-            (int)ConnectFlags.Oneshot);
+        AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnDirSelected_ProjectBrowse), (uint)ConnectFlags.OneShot);
+        AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnPopupHide_ProjectBrowse), (uint)ConnectFlags.OneShot);
 
-        AppDialogs.BrowseFolderDialog.PopupExclusive = true;
-        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2(510, 390));
+        AppDialogs.BrowseFolderDialog.Exclusive = true;
+        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2I(510, 390));
     }
 
 
@@ -217,20 +210,20 @@ StartupNotify=true
 
     void OnPopupHide_EngineBrowse()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, nameof(OnDirSelected_EngineBrowse)))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, nameof(OnDirSelected_EngineBrowse));
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected_EngineBrowse)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnDirSelected_EngineBrowse));
     }
 
     void OnPopupHide_CacheBrowse()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, nameof(OnDirSelected_CacheBrowse)))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, nameof(OnDirSelected_CacheBrowse));
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected_CacheBrowse)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnDirSelected_CacheBrowse));
     }
 
     void OnPopupHide_ProjectBrowse()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, nameof(OnDirSelected_ProjectBrowse)))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, nameof(OnDirSelected_ProjectBrowse));
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected_ProjectBrowse)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnDirSelected_ProjectBrowse));
     }
 
     // Navigation buttons Handlers
@@ -341,12 +334,11 @@ StartupNotify=true
             needRoot = true;
         }
         
-        using (var fh = new File())
+        using (var fh = FileAccess.Open("res://godot-manager.dat", FileAccess.ModeFlags.Read))
         {
-            var err = fh.Open("res://godot-manager.dat", File.ModeFlags.Read);
-            var size = fh.GetLen();
+            if (fh == null) return;
+            var size = fh.GetLength();
             var svg = fh.GetBuffer((long)size);
-            fh.Close();
             System.IO.File.WriteAllBytes(iconPath, svg);
         }
         
@@ -364,9 +356,9 @@ StartupNotify=true
                 needToCopy = true;
             }
 
-            using (var fh = new File())
+            using (var fh = FileAccess.Open("/tmp/installer.sh", FileAccess.ModeFlags.Write))
             {
-                fh.Open("/tmp/installer.sh", File.ModeFlags.Write);
+                if (fh == null) return;
                 fh.StoreString("#!/bin/bash\n\n");
                 if (needToCopy)
                 {

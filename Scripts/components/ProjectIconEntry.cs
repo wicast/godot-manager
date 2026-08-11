@@ -2,17 +2,17 @@ using Godot;
 using Godot.Sharp.Extras;
 using System;
 
-public class ProjectIconEntry : ColorRect
+public partial class ProjectIconEntry   : ColorRect
 {
 #region Signals
     [Signal]
-    public delegate void Clicked(ProjectLineEntry self);
+    public delegate void ClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void DoubleClicked(ProjectLineEntry self);
+    public delegate void DoubleClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void RightClicked(ProjectLineEntry self);
+    public delegate void RightClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void RightDoubleClicked(ProjectLineEntry self);
+    public delegate void RightDoubleClickedEventHandler(ProjectLineEntry self);
 #endregion
 
 #region Private Node Variables
@@ -27,8 +27,8 @@ public class ProjectIconEntry : ColorRect
 #endregion
 
 #region Preload Resources
-    private Texture _missingIcon = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
-    private Texture _defaultIcon = GD.Load<Texture>("res://Assets/Icons/default_project_icon.png");
+    private Texture2D _missingIcon = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
+    private Texture2D _defaultIcon = GD.Load<Texture2D>("res://Assets/Icons/default_project_icon.png");
 #endregion
 
 #region Private Variables
@@ -85,10 +85,10 @@ public class ProjectIconEntry : ColorRect
             sProjectName = value;
             if (_projectName != null) {
                 Vector2 size = titleFont.GetStringSize(value);
-                if (size.x > 280) {
-                    _projectName.Align = Label.AlignEnum.Left;
+                if (size.X > 280) {
+                    _projectName.HorizontalAlignment = HorizontalAlignment.Left;
                 } else {
-                    _projectName.Align = Label.AlignEnum.Center;
+                    _projectName.HorizontalAlignment = HorizontalAlignment.Center;
                 }
                 _projectName.Text = value;
             }
@@ -107,10 +107,10 @@ public class ProjectIconEntry : ColorRect
             sProjectLocation = value;
             if (_projectLocation != null) {
                 Vector2 size = subLineFont.GetStringSize(value);
-                if (size.x > 280) {
-                    _projectLocation.Align = Label.AlignEnum.Left;
+                if (size.X > 280) {
+                    _projectLocation.HorizontalAlignment = HorizontalAlignment.Left;
                 } else {
-                    _projectLocation.Align = Label.AlignEnum.Center;
+                    _projectLocation.HorizontalAlignment = HorizontalAlignment.Center;
                 }
 
                 if (MissingProject)
@@ -147,14 +147,14 @@ public class ProjectIconEntry : ColorRect
                 if (gv != null) {
                     _godotVersion.Text = gv.GetDisplayName();
                     Vector2 size = subLineFont.GetStringSize(gv.GetDisplayName());
-                    if (size.x > 280) {
-                        _godotVersion.Align = Label.AlignEnum.Left;
+                    if (size.X > 280) {
+                        _godotVersion.HorizontalAlignment = HorizontalAlignment.Left;
                     } else {
-                        _godotVersion.Align = Label.AlignEnum.Center;
+                        _godotVersion.HorizontalAlignment = HorizontalAlignment.Center;
                     }
                 } else {
                     _godotVersion.Text = Tr("Unknown");
-                    _godotVersion.Align = Label.AlignEnum.Center;
+                    _godotVersion.HorizontalAlignment = HorizontalAlignment.Center;
                 }
             }
         }
@@ -178,15 +178,15 @@ public class ProjectIconEntry : ColorRect
         if (!iemb.Pressed)
             return;
         
-        if (iemb.ButtonIndex == (int)ButtonList.Left) {
-            if (iemb.Doubleclick)
+        if (iemb.ButtonIndex == MouseButton.Left) {
+            if (iemb.DoubleClick)
                 EmitSignal("DoubleClicked", this);
             else {
                 SelfModulate = new Color("ffffffff");
                 EmitSignal("Clicked", this);
             }
-        } else if (iemb.ButtonIndex == (int)ButtonList.Right) {
-            if (iemb.Doubleclick)
+        } else if (iemb.ButtonIndex == MouseButton.Right) {
+            if (iemb.DoubleClick)
                 EmitSignal("RightDoubleClicked", this);
             else {
                 SelfModulate = new Color("ffffffff");

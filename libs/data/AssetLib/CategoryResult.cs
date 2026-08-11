@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace AssetLib {
 	[JsonObject(MemberSerialization.OptIn)]
-	public class CategoryResult : Object {
+	public partial class CategoryResult   : GodotObject {
 		[JsonProperty] public string Id;
 		[JsonProperty] public string Name;
 		[JsonProperty] public string Type;

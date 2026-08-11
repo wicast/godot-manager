@@ -2,14 +2,14 @@ using Godot;
 using Godot.Sharp.Extras;
 using Godot.Collections;
 
-public class ItemListWithButtons : HBoxContainer
+public partial class ItemListWithButtons   : HBoxContainer
 {
     #region Signals
-    [Signal] public delegate void add_requested();
+    [Signal] public delegate void add_requestedEventHandler();
     
-    [Signal] public delegate void edit_requested();
+    [Signal] public delegate void edit_requestedEventHandler();
 
-    [Signal] public delegate void remove_requested();
+    [Signal] public delegate void remove_requestedEventHandler();
     #endregion
     
     #region Nodc Paths
@@ -58,7 +58,7 @@ public class ItemListWithButtons : HBoxContainer
     #region Public Functions
     public void AddItem(string text) => _list.AddItem(text);
     public void SetItemText(int index, string text) => _list.SetItemText(index, text);
-    public void SetItemMetadata(int idx, object data) => _list.SetItemMetadata(idx, data);
+    public void SetItemMetadata(int idx, Variant data) => _list.SetItemMetadata(idx, data);
     public int[] GetSelectedItems() => _list.GetSelectedItems();
     public object GetItemMetadata(int idx) => _list.GetItemMetadata(idx);
     public int GetItemCount() => _list.GetItemCount();

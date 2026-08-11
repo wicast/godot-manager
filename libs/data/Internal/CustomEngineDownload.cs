@@ -5,7 +5,7 @@ using DateTime = System.DateTime;
 using TimeSpan = System.TimeSpan;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CustomEngineDownload : Object
+public partial class CustomEngineDownload   : GodotObject
 {
     [JsonProperty] public int Id;
     [JsonProperty] public string Name;

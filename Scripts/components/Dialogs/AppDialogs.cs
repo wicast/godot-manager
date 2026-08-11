@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Collections;
 
-public class AppDialogs : Control
+public partial class AppDialogs   : Control
 {
 #region Node Paths
     public FirstRunWizard FirstRunWizard_ = null;
@@ -74,63 +74,63 @@ public class AppDialogs : Control
     protected AppDialogs() {
 
         // Initialize Dialogs
-        FirstRunWizard_ = GD.Load<PackedScene>("res://components/Dialogs/FirstRunWizard.tscn").Instance<FirstRunWizard>();
-        AddCustomGodot_ = GD.Load<PackedScene>("res://components/Dialogs/AddCustomGodot.tscn").Instance<AddCustomGodot>();
-        BusyDialog_ = GD.Load<PackedScene>("res://components/Dialogs/BusyDialog.tscn").Instance<BusyDialog>();
-        NewVersion_ = GD.Load<PackedScene>("res://components/Dialogs/NewVersion.tscn").Instance<NewVersion>();
-        YesNoDialog_ = GD.Load<PackedScene>("res://components/Dialogs/YesNoDialog.tscn").Instance<YesNoDialog>();
-        YesNoCancelDialog_ = GD.Load<PackedScene>("res://components/Dialogs/YesNoCancelDialog.tscn").Instance<YesNoCancelDialog>();
-        ImportProject_ = GD.Load<PackedScene>("res://components/Dialogs/ImportProject.tscn").Instance<ImportProject>();
-        MessageDialog_ = GD.Load<PackedScene>("res://components/Dialogs/MessageDialog.tscn").Instance<MessageDialog>();
-        CreateProject_ = GD.Load<PackedScene>("res://components/Dialogs/CreateProject.tscn").Instance<CreateProject>();
-        EditProject_ = GD.Load<PackedScene>("res://components/Dialogs/EditProject.tscn").Instance<EditProject>();
-        CreateCategory_ = GD.Load<PackedScene>("res://components/Dialogs/CreateCategory.tscn").Instance<CreateCategory>();
-        RemoveCategory_ = GD.Load<PackedScene>("res://components/Dialogs/RemoveCategory.tscn").Instance<RemoveCategory>();
-        AssetLibPreview_ = GD.Load<PackedScene>("res://components/Dialogs/AssetLibPreview.tscn").Instance<AssetLibPreview>();
-        DownloadAddon_ = GD.Load<PackedScene>("res://components/Dialogs/DownloadAddon.tscn").Instance<DownloadAddon>();
-        DownloadGodotManager_ = GD.Load<PackedScene>("res://components/Dialogs/DownloadGodotManager.tscn").Instance<DownloadGodotManager>();
-        AddonInstaller_ = GD.Load<PackedScene>("res://components/Dialogs/AddonInstaller.tscn").Instance<AddonInstaller>();
-        FileConflictDialog_ = GD.Load<PackedScene>("res://components/Dialogs/FileConflictDialog.tscn").Instance<FileConflictDialog>();
-        AddonMirror_ = GD.Load<PackedScene>("res://components/Dialogs/AddonMirror.tscn").Instance<AddonMirror>();
-        ManageCustomDownloads_ = GD.Load<PackedScene>("res://components/Dialogs/ManageCustomDownloads.tscn").Instance<ManageCustomDownloads>();
-        ListSelectDialog_ = GD.Load<PackedScene>("res://components/Dialogs/ListSelectDialog.tscn").Instance<ListSelectDialog>();
+        FirstRunWizard_ = GD.Load<PackedScene>("res://components/Dialogs/FirstRunWizard.tscn").Instantiate<FirstRunWizard>();
+        AddCustomGodot_ = GD.Load<PackedScene>("res://components/Dialogs/AddCustomGodot.tscn").Instantiate<AddCustomGodot>();
+        BusyDialog_ = GD.Load<PackedScene>("res://components/Dialogs/BusyDialog.tscn").Instantiate<BusyDialog>();
+        NewVersion_ = GD.Load<PackedScene>("res://components/Dialogs/NewVersion.tscn").Instantiate<NewVersion>();
+        YesNoDialog_ = GD.Load<PackedScene>("res://components/Dialogs/YesNoDialog.tscn").Instantiate<YesNoDialog>();
+        YesNoCancelDialog_ = GD.Load<PackedScene>("res://components/Dialogs/YesNoCancelDialog.tscn").Instantiate<YesNoCancelDialog>();
+        ImportProject_ = GD.Load<PackedScene>("res://components/Dialogs/ImportProject.tscn").Instantiate<ImportProject>();
+        MessageDialog_ = GD.Load<PackedScene>("res://components/Dialogs/MessageDialog.tscn").Instantiate<MessageDialog>();
+        CreateProject_ = GD.Load<PackedScene>("res://components/Dialogs/CreateProject.tscn").Instantiate<CreateProject>();
+        EditProject_ = GD.Load<PackedScene>("res://components/Dialogs/EditProject.tscn").Instantiate<EditProject>();
+        CreateCategory_ = GD.Load<PackedScene>("res://components/Dialogs/CreateCategory.tscn").Instantiate<CreateCategory>();
+        RemoveCategory_ = GD.Load<PackedScene>("res://components/Dialogs/RemoveCategory.tscn").Instantiate<RemoveCategory>();
+        AssetLibPreview_ = GD.Load<PackedScene>("res://components/Dialogs/AssetLibPreview.tscn").Instantiate<AssetLibPreview>();
+        DownloadAddon_ = GD.Load<PackedScene>("res://components/Dialogs/DownloadAddon.tscn").Instantiate<DownloadAddon>();
+        DownloadGodotManager_ = GD.Load<PackedScene>("res://components/Dialogs/DownloadGodotManager.tscn").Instantiate<DownloadGodotManager>();
+        AddonInstaller_ = GD.Load<PackedScene>("res://components/Dialogs/AddonInstaller.tscn").Instantiate<AddonInstaller>();
+        FileConflictDialog_ = GD.Load<PackedScene>("res://components/Dialogs/FileConflictDialog.tscn").Instantiate<FileConflictDialog>();
+        AddonMirror_ = GD.Load<PackedScene>("res://components/Dialogs/AddonMirror.tscn").Instantiate<AddonMirror>();
+        ManageCustomDownloads_ = GD.Load<PackedScene>("res://components/Dialogs/ManageCustomDownloads.tscn").Instantiate<ManageCustomDownloads>();
+        ListSelectDialog_ = GD.Load<PackedScene>("res://components/Dialogs/ListSelectDialog.tscn").Instantiate<ListSelectDialog>();
 
         ImageFileDialog_ = new FileDialog();
         ImageFileDialog_.Name = "ImageFileDialog";
-        ImageFileDialog_.Mode = FileDialog.ModeEnum.OpenFile;
+        ImageFileDialog_.FileMode = FileDialog.FileModeEnum.OpenFile;
         ImageFileDialog_.Access = FileDialog.AccessEnum.Filesystem;
-        ImageFileDialog_.WindowTitle = Tr("Open Icon...");
+        ImageFileDialog_.Title = Tr("Open Icon...");
         ImageFileDialog_.Filters = new string[] {"*.png", "*.webp", "*.svg", "*.svgz"};
-        ImageFileDialog_.RectMinSize = new Vector2(510, 390);
+        ImageFileDialog_.MinSize = new Vector2I(510, 390);
         ImageFileDialog_.Theme = GD.Load<Theme>("res://Resources/DefaultTheme.tres");
 
         // Internal File Dialog
         ImportFileDialog_ = new FileDialog();
         ImportFileDialog_.Name = "ImportFileDialog";
-        ImportFileDialog_.Mode = FileDialog.ModeEnum.OpenFile;
+        ImportFileDialog_.FileMode = FileDialog.FileModeEnum.OpenFile;
         ImportFileDialog_.Access = FileDialog.AccessEnum.Filesystem;
-        ImportFileDialog_.WindowTitle = Tr("Open Godot Project...");
+        ImportFileDialog_.Title = Tr("Open Godot Project...");
         ImportFileDialog_.Filters = new string[] {"*.godot"};
-        ImportFileDialog_.RectMinSize = new Vector2(510, 390);
+        ImportFileDialog_.MinSize = new Vector2I(510, 390);
         ImportFileDialog_.Theme = GD.Load<Theme>("res://Resources/DefaultTheme.tres");
 
         // Internal Browse Folder Dialog
         BrowseFolderDialog_ = new FileDialog();
         BrowseFolderDialog_.Name = "BrowseFileDialog";
-        BrowseFolderDialog_.Mode = FileDialog.ModeEnum.OpenDir;
+        BrowseFolderDialog_.FileMode = FileDialog.FileModeEnum.OpenDir;
         BrowseFolderDialog_.Access = FileDialog.AccessEnum.Filesystem;
-        BrowseFolderDialog_.WindowTitle = Tr("Open Folder");
-        BrowseFolderDialog_.RectMinSize = new Vector2(510, 390);
+        BrowseFolderDialog_.Title = Tr("Open Folder");
+        BrowseFolderDialog_.MinSize = new Vector2I(510, 390);
         BrowseFolderDialog_.Theme = GD.Load<Theme>("res://Resources/DefaultTheme.tres");
 
         // Internal Browse Godot Dialog
         BrowseGodotDialog_ = new FileDialog();
         BrowseGodotDialog_.Name = "BrowseGodotDialog";
-        BrowseGodotDialog_.Mode = FileDialog.ModeEnum.OpenFile;
+        BrowseGodotDialog_.FileMode = FileDialog.FileModeEnum.OpenFile;
         BrowseGodotDialog_.Access = FileDialog.AccessEnum.Filesystem;
-        BrowseGodotDialog_.WindowTitle = Tr("Find Godot...");
+        BrowseGodotDialog_.Title = Tr("Find Godot...");
         BrowseGodotDialog_.Filters = new string[] { "*.exe", "*.x86_64", "*.x86", "*.64", "*.32", ".app", "godot"};
-        BrowseGodotDialog_.RectMinSize = new Vector2(510, 390);
+        BrowseGodotDialog_.MinSize = new Vector2I(510, 390);
         BrowseGodotDialog_.Theme = GD.Load<Theme>("res://Resources/DefaultTheme.tres");
 
         dialogs = new Array<ReferenceRect> {    // Hierarchy of Dialogs in window, for proper displaying
@@ -159,7 +159,7 @@ public class AppDialogs : Control
     public override void _EnterTree() {
         // Setup Full Rect for dialogs:
         foreach(ReferenceRect dlg in dialogs ) {
-            dlg.SetAnchorsAndMarginsPreset(LayoutPreset.Wide);
+            dlg.SetAnchorsPreset(LayoutPreset.FullRect);
             dlg.Visible = false;
             AddChild(dlg);
         }

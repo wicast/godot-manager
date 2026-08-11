@@ -4,7 +4,7 @@ using Godot.Collections;
 using System;
 using System.Threading.Tasks;
 
-public class FileConflictDialog : ReferenceRect
+public partial class FileConflictDialog   : ReferenceRect
 {
     #region Enumerations
     public enum ConflictAction {

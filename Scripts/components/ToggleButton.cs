@@ -2,7 +2,7 @@ using Godot;
 using Godot.Sharp.Extras;
 using System;
 
-public class ToggleButton : ColorRect
+public partial class ToggleButton   : ColorRect
 {
 	[NodePath("../../../../../AnimationPlayer")]
 	private AnimationPlayer anim_player = null;
@@ -20,10 +20,10 @@ public class ToggleButton : ColorRect
         if (!iemb.Pressed)
             return;
 		
-		if ((ButtonList)iemb.ButtonIndex != ButtonList.Left)
+		if ((MouseButton)iemb.ButtonIndex != MouseButton.Left)
 			return;
 
-		if (GetNode<ColorRect>("../..").RectMinSize.x == 70)	{
+		if (GetNode<ColorRect>("../..").CustomMinimumSize.X == 70)	{
 			anim_player.Play("sidebar_anim");
 		} else {
 			anim_player.PlayBackwards("sidebar_anim");

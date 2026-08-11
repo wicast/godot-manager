@@ -4,17 +4,17 @@ using Godot.Sharp.Extras;
 using Uri = System.Uri;
 using File = System.IO.File;
 
-public class AssetLibPreview : ReferenceRect
+public partial class AssetLibPreview   : ReferenceRect
 {
 #region Signals
     [Signal]
-    public delegate void installed_addon(bool update);
+    public delegate void installed_addonEventHandler(bool update);
 
     [Signal]
-    public delegate void uninstalled_addon();
+    public delegate void uninstalled_addonEventHandler();
 
     [Signal]
-    public delegate void preview_closed();
+    public delegate void preview_closedEventHandler();
 #endregion
 
 #region Node Paths
@@ -111,12 +111,12 @@ public class AssetLibPreview : ReferenceRect
 
         AppDialogs.DownloadAddon.Asset = _asset;
         AppDialogs.DownloadAddon.LoadInformation();
-        AppDialogs.DownloadAddon.Connect("download_complete", this, "OnDownloadAddonCompleted");
+        AppDialogs.DownloadAddon.Connect("download_complete", Callable.From<AssetLib.Asset, AssetProject, AssetPlugin>(OnDownloadAddonCompleted));
         await AppDialogs.DownloadAddon.StartDownload();
     }
 
     async void OnDownloadAddonCompleted(AssetLib.Asset asset, AssetProject ap, AssetPlugin apl) {
-        AppDialogs.DownloadAddon.Disconnect("download_complete", this, "OnDownloadAddonCompleted");
+        AppDialogs.DownloadAddon.Disconnect("download_complete", Callable.From<AssetLib.Asset, AssetProject, AssetPlugin>(OnDownloadAddonCompleted));
         if (apl != null) {
             AppDialogs.AddonInstaller.ShowDialog(apl);
         }
@@ -128,8 +128,9 @@ public class AssetLibPreview : ReferenceRect
             string.Format(Tr("Download of {0} completed."),asset.Title));
     }
 
-    [SignalHandler("hide")]
+    [SignalHandler("visibility_changed")]
     void OnHide_AssetLibPreview() {
+        if (Visible) return; // visibility_changed also fires when shown
         EmitSignal("preview_closed");
     }
 
@@ -142,7 +143,7 @@ public class AssetLibPreview : ReferenceRect
         _AddonId.Text = asset.AssetId;
         _GodotVersion.Text = "v" + asset.GodotVersion;
         _License.Text = asset.Cost;
-        _Description.BbcodeText = "[table=1][cell][color=lime]" + 
+        _Description.Text = "[table=1][cell][color=lime]" + 
         Tr("Support") + $"[/color][/cell][cell][color=aqua][url={asset.BrowseUrl}]" + 
         Tr("Homepage") + $"[/url][/color][/cell][cell][color=aqua][url={asset.IssuesUrl}]" +
         Tr("Issue/Support Page") + $"[/url][/color][/cell][/table]\n\n{asset.Description.Replace("\r","")}";
@@ -161,17 +162,16 @@ public class AssetLibPreview : ReferenceRect
             dlq.Push(dldIcon);
         } else {
             if (sIconPath.EndsWith(".gif")) {
-                GifTexture gif = new GifTexture(sIconPath);
-                _Icon.Texture = gif;
+                _Icon.Texture = GifTexture.Load(sIconPath);
             } else {
-                Texture icon = Util.LoadImage(sIconPath);
+                Texture2D icon = Util.LoadImage(sIconPath);
                 if (icon == null)
-                    _Icon.Texture = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                    _Icon.Texture = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
                 else
                     _Icon.Texture = icon;
             }
         }
-        _Preview.Texture = GD.Load<Texture>("res://Assets/Icons/icon_thumbnail_wait.svg");
+        _Preview.Texture = GD.Load<Texture2D>("res://Assets/Icons/icon_thumbnail_wait.svg");
         _MissingThumbnails.Visible = false;
         _PlayButton.Visible = false;
         
@@ -183,11 +183,11 @@ public class AssetLibPreview : ReferenceRect
 
         for (int i = 0; i < asset.Previews.Count; i++) {
             TextureRect preview = new TextureRect();
-            preview.RectMinSize = new Vector2(120,120);
-            preview.Texture = GD.Load<Texture>("res://Assets/Icons/icon_thumbnail_wait.svg");
-            preview.Expand = true;
+            preview.CustomMinimumSize = new Vector2(120,120);
+            preview.Texture = GD.Load<Texture2D>("res://Assets/Icons/icon_thumbnail_wait.svg");
+            preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
             preview.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-            preview.Connect("gui_input", this, "OnGuiInput_Preview", new Array { preview });
+            preview.Connect("gui_input", Callable.From<InputEvent>(evt => OnGuiInput_Preview(evt, preview)));
             _Thumbnails.AddChild(preview);
             Uri tnUri;
             try {
@@ -210,12 +210,11 @@ public class AssetLibPreview : ReferenceRect
             } else {
                 dldPreviews.Add(null);
                 if (iconPath.EndsWith(".gif")) {
-                    GifTexture gif = new GifTexture(iconPath);
-                    preview.Texture = gif;
+                    preview.Texture = GifTexture.Load(iconPath);
                 } else {
-                    Texture icon = Util.LoadImage(iconPath);
+                    Texture2D icon = Util.LoadImage(iconPath);
                     if (icon == null)
-                        preview.Texture = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                        preview.Texture = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
                     else
                         preview.Texture = icon;
                 }
@@ -284,7 +283,7 @@ public class AssetLibPreview : ReferenceRect
     [SignalHandler("gui_input", nameof(_AddonId))]
     void OnGuiInput_AddonId(InputEvent @event)
     {
-        if (@event is InputEventMouseButton iemb && iemb.ButtonIndex == (int)ButtonList.Left)
+        if (@event is InputEventMouseButton iemb && iemb.ButtonIndex == MouseButton.Left)
         {
             OS.ShellOpen($"https://godotengine.org/asset-library/asset/{_AddonId.Text}");
         }
@@ -337,8 +336,8 @@ public class AssetLibPreview : ReferenceRect
     [SignalHandler("gui_input", nameof(_PlayButton))]
     void OnGuiInput_PlayButton(InputEvent inputEvent) {
         if (inputEvent is InputEventMouseButton iembEvent) {
-            if (iembEvent.Pressed && iembEvent.ButtonIndex == (int)ButtonList.Left) {
-                string url = _Preview.GetMeta("url") as string;
+            if (iembEvent.Pressed && iembEvent.ButtonIndex == MouseButton.Left) {
+                string url = _Preview.GetMeta("url").AsString();
                 OS.ShellOpen(url);
             }
         }
@@ -346,7 +345,7 @@ public class AssetLibPreview : ReferenceRect
 
     void OnGuiInput_Preview(InputEvent inputEvent, TextureRect rect) {
         if (inputEvent is InputEventMouseButton iembEvent) {
-            if (iembEvent.Pressed && iembEvent.ButtonIndex == (int)ButtonList.Left)
+            if (iembEvent.Pressed && iembEvent.ButtonIndex == MouseButton.Left)
 			{
 				UpdatePreview(rect);
 			}
@@ -363,7 +362,7 @@ public class AssetLibPreview : ReferenceRect
 	{
 		_Preview.Texture = rect.Texture;
 		_Preview.SetMeta("url", rect.GetMeta("url"));
-		Uri tnUri = new Uri(rect.GetMeta("url") as string);
+		Uri tnUri = new Uri(rect.GetMeta("url").AsString());
         _MissingThumbnails.Visible = false;
 		if (tnUri.Host.IndexOf("youtube.com") != -1)
 		{
@@ -379,12 +378,11 @@ public class AssetLibPreview : ReferenceRect
 	void OnImageDownloaded(ImageDownloader dld) {
         if (dld == dldIcon) {
             if (sIconPath.EndsWith(".gif")) {
-                GifTexture gif = new GifTexture(sIconPath);
-                _Icon.Texture = gif;
+                _Icon.Texture = GifTexture.Load(sIconPath);
             } else {
-                Texture icon = Util.LoadImage(sIconPath);
+                Texture2D icon = Util.LoadImage(sIconPath);
                 if (icon == null)
-                    _Icon.Texture = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                    _Icon.Texture = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
                 else
                     _Icon.Texture = icon;
             }
@@ -415,22 +413,21 @@ public class AssetLibPreview : ReferenceRect
         object iconMeta = preview.GetMeta("iconPath");
         if (iconMeta is null)
             return;
-        string iconPath = iconMeta as string;
+        string iconPath = iconMeta.ToString();
 		if (File.Exists(iconPath.GetOSDir().NormalizePath()))
 		{
             if (iconPath.EndsWith(".gif")) {
-                GifTexture gif = new GifTexture(iconPath);
-                preview.Texture = gif;
+                preview.Texture = GifTexture.Load(iconPath);
             } else {
-                Texture icon = Util.LoadImage(iconPath);
+                Texture2D icon = Util.LoadImage(iconPath);
                 if (icon == null)
-                    icon = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                    icon = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
                 preview.Texture = icon;
             }
 		}
 		else
 		{
-			preview.Texture = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+			preview.Texture = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
 		}
 	}
 }

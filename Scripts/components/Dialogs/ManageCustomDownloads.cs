@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot.Sharp.Extras;
 
-public class ManageCustomDownloads : ReferenceRect
+public partial class ManageCustomDownloads   : ReferenceRect
 {
     [Signal]
-    public delegate void update_list();
+    public delegate void update_listEventHandler();
     
     #region NodePaths
 
@@ -87,7 +87,7 @@ public class ManageCustomDownloads : ReferenceRect
             return;
         }
         var ced = CustomVersionList.GetItemMetadata(items[0]);
-        _currentCed = ced as CustomEngineDownload;
+        _currentCed = ced.As<CustomEngineDownload>();
         DisplayStruct();
     }
 
@@ -101,7 +101,7 @@ public class ManageCustomDownloads : ReferenceRect
                 "You must select a Download entry to remove it.");
             return;
         }
-        var delCed = CustomVersionList.GetItemMetadata(items[0]) as CustomEngineDownload;
+        var delCed = CustomVersionList.GetItemMetadata(items[0]).As<CustomEngineDownload>();
         bool installed = false;
         GodotVersion installedGv = null;
         foreach (GodotVersion gv in CentralStore.Versions)
@@ -194,10 +194,10 @@ public class ManageCustomDownloads : ReferenceRect
             var client = new GDCSHTTPClient();
             var uri = new Uri(DownloadUrl.Text);
             var res = await client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
-            if (res == HTTPClient.Status.Connected)
+            if (res == GDCSHTTPClient.Status.Connected)
             {
                 var headers = await client.HeadRequest(uri.PathAndQuery);
-                if (headers.Headers.Contains("Transfer-Encoding"))
+                if (headers.Headers.ContainsKey("Transfer-Encoding"))
                     _currentCed.DownloadSize = 0;
                 else
                 {
@@ -218,7 +218,7 @@ public class ManageCustomDownloads : ReferenceRect
         bool found = false;
         for (int i = 0; i < CustomVersionList.GetItemCount(); i++)
         {
-            if (CustomVersionList.GetItemMetadata(i) == _currentCed)
+            if (CustomVersionList.GetItemMetadata(i).As<CustomEngineDownload>() == _currentCed)
             {
                 CustomVersionList.SetItemText(i, DownloadName.Text);
                 found = true;

@@ -3,23 +3,23 @@ using Godot.Collections;
 using Godot.Sharp.Extras;
 using System;
 
-public class ProjectLineEntry : ColorRect
+public partial class ProjectLineEntry   : ColorRect
 {
 #region Signals
     [Signal]
-    public delegate void Clicked(ProjectLineEntry self);
+    public delegate void ClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void DoubleClicked(ProjectLineEntry self);
+    public delegate void DoubleClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void RightClicked(ProjectLineEntry self);
+    public delegate void RightClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void RightDoubleClicked(ProjectLineEntry self);
+    public delegate void RightDoubleClickedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void FavoriteUpdated(ProjectLineEntry self);
+    public delegate void FavoriteUpdatedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void DragStarted(ProjectLineEntry self);
+    public delegate void DragStartedEventHandler(ProjectLineEntry self);
     [Signal]
-    public delegate void DragEnded(ProjectLineEntry self);
+    public delegate void DragEndedEventHandler(ProjectLineEntry self);
 #endregion
 
 #region Private Node Variables
@@ -38,8 +38,8 @@ public class ProjectLineEntry : ColorRect
 #endregion
 
 #region Preload Resources
-    private Texture _missingIcon = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
-    private Texture _defaultIcon = GD.Load<Texture>("res://Assets/Icons/default_project_icon.png");
+    private Texture2D _missingIcon = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
+    private Texture2D _defaultIcon = GD.Load<Texture2D>("res://Assets/Icons/default_project_icon.png");
 #endregion
 
 #region Private Variables
@@ -189,15 +189,15 @@ public class ProjectLineEntry : ColorRect
         if (!iemb.Pressed)
             return;
         
-        if (iemb.ButtonIndex == (int)ButtonList.Left) {
-            if (iemb.Doubleclick)
+        if (iemb.ButtonIndex == MouseButton.Left) {
+            if (iemb.DoubleClick)
                 EmitSignal("DoubleClicked", this);
             else {
                 SelfModulate = new Color("ffffffff");
                 EmitSignal("Clicked", this);
             }
-        } else if (iemb.ButtonIndex == (int)ButtonList.Right) {
-            if (iemb.Doubleclick)
+        } else if (iemb.ButtonIndex == MouseButton.Right) {
+            if (iemb.DoubleClick)
                 EmitSignal("RightDoubleClicked", this);
             else {
                 SelfModulate = new Color("ffffffff");
@@ -208,27 +208,27 @@ public class ProjectLineEntry : ColorRect
     }
 
     // Test Drag and Drop
-    public override bool CanDropData(Vector2 position, object data)
+    public override bool _CanDropData(Vector2 position, Variant data)
     {
-        return GetParent().GetParent<CategoryList>().CanDropData(position, data);
+        return GetParent().GetParent<CategoryList>()._CanDropData(position, data);
     }
 
-    public override void DropData(Vector2 position, object data)
+    public override void _DropData(Vector2 position, Variant data)
     {
-        GetParent().GetParent<CategoryList>().DropData(position, data);
+        GetParent().GetParent<CategoryList>()._DropData(position, data);
     }
 
-    public override object GetDragData(Vector2 position) {
+    public override Variant _GetDragData(Vector2 position) {
         if (!(GetParent().GetParent() is CategoryList))
-            return null;
+            return default;
         Dictionary data = new Dictionary();
         data["source"] = this;
         data["parent"] = this.GetParent().GetParent();
-        var preview = GD.Load<PackedScene>("res://components/ProjectLineEntry.tscn").Instance<ProjectLineEntry>();
-        var notifier = new VisibilityNotifier2D();
+        var preview = GD.Load<PackedScene>("res://components/ProjectLineEntry.tscn").Instantiate<ProjectLineEntry>();
+        var notifier = new VisibleOnScreenNotifier2D();
         preview.AddChild(notifier);
-        notifier.Connect("screen_entered", this, "OnDragStart");
-        notifier.Connect("screen_exited", this, "OnDragEnded");
+        notifier.Connect("screen_entered", Callable.From(OnDragStart));
+        notifier.Connect("screen_exited", Callable.From(OnDragEnded));
         preview.ProjectFile = ProjectFile;
         SetDragPreview(preview);
         data["preview"] = preview;

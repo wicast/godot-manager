@@ -4,12 +4,12 @@ using Newtonsoft.Json;
 using Uri = System.Uri;
 
 namespace AssetLib {
-	public class AssetLib : Node {
+	public partial class AssetLib   : Node {
 		[Signal]
-		public delegate void chunk_received(int size);
+		public delegate void chunk_receivedEventHandler(int size);
 
 		[Signal]
-		public delegate void request_completed();
+		public delegate void request_completedEventHandler();
 
 		private static AssetLib _instance;
 
@@ -58,7 +58,7 @@ namespace AssetLib {
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else
 				client.ClearProxy();
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
 
 			while (!cres.IsCompleted) {
 				await this.IdleFrame();
@@ -108,7 +108,7 @@ namespace AssetLib {
 			Uri uri = new Uri(query);
 			if (CentralStore.Settings.UseProxy)
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
 
 			while (!cres.IsCompleted)
 				await this.IdleFrame();
@@ -182,7 +182,7 @@ namespace AssetLib {
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else
 				client.ClearProxy();
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, uri.Scheme == "https");
 
 			while (!cres.IsCompleted)
 				await this.IdleFrame();

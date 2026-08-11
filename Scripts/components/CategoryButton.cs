@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class CategoryButton : Button
+public partial class CategoryButton   : Button
 {
 
 #region Nodes
@@ -13,7 +13,7 @@ public class CategoryButton : Button
 #endregion
 
 #region Variables
-    private Texture tIcon;
+    private Texture2D tIcon;
     private string sText;
 #endregion
 
@@ -34,8 +34,8 @@ public class CategoryButton : Button
         }
     }
 
-    [Export(PropertyHint.File)]
-    public new Texture Icon {
+    [Export]
+    public new Texture2D Icon {
         get {
             if (_Icon != null)
                 return _Icon.Texture;

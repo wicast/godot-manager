@@ -5,12 +5,12 @@ using Godot.Sharp.Extras;
 using Godot.Collections;
 using Queue = System.Collections.Queue;
 
-public class DownloadQueue : Node {
+public partial class DownloadQueue   : Node {
 	[Signal]
-	public delegate void download_completed(ImageDownloader dld);
+	public delegate void download_completedEventHandler(ImageDownloader dld);
 
 	[Signal]
-	public delegate void queue_finished();
+	public delegate void queue_finishedEventHandler();
 
 	Queue<ImageDownloader> queued;
 	Array<ImageDownloader> active;

@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Godot;
 using Godot.Sharp.Extras;
 
-public class YesNoCancelDialog : ReferenceRect
+public partial class YesNoCancelDialog   : ReferenceRect
 {
     
     [NodePath("PC/CC/P/VB/MCContent/VC/Title")]

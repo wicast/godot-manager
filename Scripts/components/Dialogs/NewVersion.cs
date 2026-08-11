@@ -3,13 +3,13 @@ using Godot.Collections;
 using Godot.Sharp.Extras;
 using System;
 
-public class NewVersion : ReferenceRect
+public partial class NewVersion   : ReferenceRect
 {
     [Signal]
-    public delegate void download_update(Github.Release release, bool use_mono);
+    public delegate void download_updateEventHandler(Github.Release release, bool use_mono);
     
     [Signal]
-    public delegate void download_manager_update(Github.Release release);
+    public delegate void download_manager_updateEventHandler(Github.Release release);
 
     [NodePath("PC/CC/P/VB/MCContent/VC/ReleaseInfo")]
     Label ReleaseInfo = null;
@@ -36,7 +36,7 @@ public class NewVersion : ReferenceRect
     [SignalHandler("pressed", nameof(Download))]
     void OnDownloadClicked() {
         if (UseMono.Visible)
-            EmitSignal("download_update", _release, UseMono.Pressed);
+            EmitSignal("download_update", _release, UseMono.ButtonPressed);
         else
             EmitSignal("download_manager_update", _release);
         Visible = false;
@@ -49,7 +49,7 @@ public class NewVersion : ReferenceRect
                 "Version: {0}\nReleased:{1}\nReleased by: {2}"),
                 release.Name,release.PublishedAt.ToLongDateString(),release.Author.Login);
             UseMono.Visible = true;
-            UseMono.Pressed = false;
+            UseMono.ButtonPressed = false;
         }
         else {
             ReleaseInfo.Text = string.Format(Tr("There is a new version of Godot Manager.\n" +

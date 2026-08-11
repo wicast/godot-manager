@@ -9,7 +9,7 @@ using Guid = System.Guid;
 using Version = System.Version;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GodotVersion : Godot.Object, IComparable<GodotVersion> {
+public partial class GodotVersion   : GodotObject, IComparable<GodotVersion> {
 	[JsonProperty] public string Id; // This will be a UUID
 	[JsonProperty] public string Tag; // This will be used to display to the user
 	[JsonProperty] public bool IsMono; // This is used to determine if the file downloaded is Mono
@@ -96,7 +96,7 @@ public class GodotVersion : Godot.Object, IComparable<GodotVersion> {
 		// can be any number of parts, and only parts with just digits are compared numerically.
 		// numerical parts are always lower than non-numerical parts.
 
-		Func<string, bool> isDigits = s => ('1' + s).IsValidInteger();
+		Func<string, bool> isDigits = s => int.TryParse('1' + s, out _);
 
 		Func<string, string, int> mixedComp;
 		mixedComp = (string a, string b) => isDigits(b) ? 1 : (isDigits(a) ? -1 : a.CompareTo(b));

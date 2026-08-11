@@ -2,13 +2,13 @@ using Godot;
 using Godot.Collections;
 
 [Tool]
-public class ActionButtons : PanelContainer
+public partial class ActionButtons   : PanelContainer
 {
     [Signal]
-    delegate void clicked(int index);
+    delegate void clickedEventHandler(int index);
 
     [Export(PropertyHint.File)]
-    Array<StreamTexture> Icons = null;
+    Array<Texture2D> Icons = null;
     [Export]
     Array<string> HelpText = null;
 
@@ -18,7 +18,7 @@ public class ActionButtons : PanelContainer
     public override void _Ready()
     {
         if (Icons == null) {
-            Icons = new Array<StreamTexture>();
+            Icons = new Array<Texture2D>();
             return;
         }
         if (HelpText == null) {
@@ -26,28 +26,28 @@ public class ActionButtons : PanelContainer
         }
         for (int i = 0; i < Icons.Count; i++) {
             ColorRect icon_bg = new ColorRect();
-            icon_bg.RectMinSize = new Vector2(20,20);
+            icon_bg.CustomMinimumSize = new Vector2(20,20);
             icon_bg.Color = new Color("ACACAC");
-            icon_bg.SelfModulate = new Color("00FFFFFF");
+            icon_bg.SelfModulate = new Color(1, 1, 1, 0); // "00ffffff" was AARRGGBB in Godot 3 (transparent), RRGGBBAA in Godot 4 (cyan!)
             TextureRect icon = new TextureRect();
             icon.Texture = Icons[i];
-            icon.RectMinSize = new Vector2(20,20);
+            icon.CustomMinimumSize = new Vector2(20,20);
             icon.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-            icon.Expand = true;
+            icon.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
             icon_bg.AddChild(icon);
             _icons.Add(icon_bg);
             
             Godot.Collections.Array bg = new Godot.Collections.Array();
             bg.Add(icon_bg);
             if (HelpText.Count > i)
-                icon_bg.HintTooltip = HelpText[i];
+                icon_bg.TooltipText = HelpText[i];
 
             GetNode<HBoxContainer>("Buttons").AddChild(icon_bg);
-            icon_bg.Connect("mouse_entered", this, "Icon_MouseEntered", bg);
-            icon_bg.Connect("mouse_exited", this, "Icon_MouseExited", bg);
+            icon_bg.Connect("mouse_entered", Callable.From(() => Icon_MouseEntered(icon_bg)));
+            icon_bg.Connect("mouse_exited", Callable.From(() => Icon_MouseExited(icon_bg)));
 
-            bg.Add(i);
-            icon_bg.Connect("gui_input", this, "Icon_GuiInput", bg);
+            int captureIndex = i;
+            icon_bg.Connect("gui_input", Callable.From((InputEvent e) => Icon_GuiInput(e, icon_bg, captureIndex)));
         }
     }
 
@@ -70,15 +70,15 @@ public class ActionButtons : PanelContainer
     }
 
     public void Icon_MouseEntered(ColorRect rect) {
-        rect.SelfModulate = new Color("B9FFFFFF");
+        rect.SelfModulate = new Color(1, 1, 1, 0.7255f); // was "B9ffffff" (white @ 72.5% in Godot 3)
     }
 
     public void Icon_MouseExited(ColorRect rect) {
-        rect.SelfModulate = new Color("00FFFFFF");
+        rect.SelfModulate = new Color(1, 1, 1, 0);
     }
 
     public void Icon_GuiInput(InputEvent inputEvent, ColorRect bg, int index) {
-        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (ButtonList)iemb.ButtonIndex == ButtonList.Left)
+        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (MouseButton)iemb.ButtonIndex == MouseButton.Left)
         {
             EmitSignal("clicked", index);
         }

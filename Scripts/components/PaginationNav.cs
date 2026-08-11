@@ -2,11 +2,11 @@ using Godot;
 using Godot.Sharp.Extras;
 using Godot.Collections;
 
-public class PaginationNav : CenterContainer
+public partial class PaginationNav   : CenterContainer
 {
 #region Signals
     [Signal]
-    public delegate void page_changed(int page);
+    public delegate void page_changedEventHandler(int page);
 #endregion
 
 #region Node Paths
@@ -36,10 +36,10 @@ public class PaginationNav : CenterContainer
     public override void _Ready()
     {
         this.OnReady();
-        _firstPage.Connect("pressed", this, "StepPage", new Array { 0 });
-        _prevPage.Connect("pressed", this, "StepPage", new Array { -1 });
-        _nextPage.Connect("pressed", this, "StepPage", new Array { 1 });
-        _lastPage.Connect("pressed", this, "StepPage", new Array { -2 });
+        _firstPage.Connect("pressed", Callable.From(() => StepPage(0)));
+        _prevPage.Connect("pressed", Callable.From(() => StepPage(-1)));
+        _nextPage.Connect("pressed", Callable.From(() => StepPage(1)));
+        _lastPage.Connect("pressed", Callable.From(() => StepPage(-2)));
     }
 
     public void UpdateConfig(int totalPages) {
@@ -50,8 +50,8 @@ public class PaginationNav : CenterContainer
         for (int i = 0; i < totalPages; i++) {
             Button btn = new Button();
             btn.Text = $"{i+1}";
-            btn.RectMinSize = new Vector2(25,0);
-            btn.Connect("pressed", this, "PageChanged", new Array { i });
+            btn.CustomMinimumSize = new Vector2(25,0);
+            btn.Connect("pressed", Callable.From(() => PageChanged(i)));
             _pageCount.AddChild(btn);
             abPages.Add(btn);
             if (i > 9) {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-public static class Retry
+public static partial class Retry  
 {
 	public static void Do(
 		Action action,

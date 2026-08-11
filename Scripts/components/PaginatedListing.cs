@@ -6,11 +6,11 @@ using File = System.IO.File;
 using System.IO.Compression;
 using System.Collections.Generic;
 
-public class PaginatedListing : ScrollContainer
+public partial class PaginatedListing   : ScrollContainer
 {
 #region Signals
     [Signal]
-    public delegate void page_changed(int page);
+    public delegate void page_changedEventHandler(int page);
 #endregion
 
 #region Node Paths
@@ -60,7 +60,7 @@ public class PaginatedListing : ScrollContainer
         _bottomPageCount.Visible = false;
 
         foreach(AssetPlugin plgn in CentralStore.Plugins) {
-            AssetLibEntry ale = tAssetLibEntry.Instance<AssetLibEntry>();
+            AssetLibEntry ale = tAssetLibEntry.Instantiate<AssetLibEntry>();
             ale.Title = plgn.Asset.Title;
             ale.Category = plgn.Asset.Category;
             ale.Author = plgn.Asset.Author;
@@ -84,7 +84,7 @@ public class PaginatedListing : ScrollContainer
                         dlq.Push(dld);
                         ale.SetMeta("dld", dld);
                     } else {
-                        Texture icon = Util.LoadImage(iconPath);
+                        Texture2D icon = Util.LoadImage(iconPath);
                         if (icon == null)
                             ale.Icon = Util.LoadImage("res://Assets/Icons/missing_icon.svg");
                         else
@@ -113,7 +113,7 @@ public class PaginatedListing : ScrollContainer
         _bottomPageCount.Visible = false;
 
         foreach(AssetProject prj in CentralStore.Templates) {
-            AssetLibEntry ale = tAssetLibEntry.Instance<AssetLibEntry>();
+            AssetLibEntry ale = tAssetLibEntry.Instantiate<AssetLibEntry>();
             ale.Title = prj.Asset.Title;
             ale.Category = prj.Asset.Category;
             ale.Author = prj.Asset.Author;
@@ -135,10 +135,11 @@ public class PaginatedListing : ScrollContainer
                             if (zipPath != "") {
                                 ZipArchiveEntry zae = za.GetEntry(FindFile(za, zipPath));
                                 byte[] buffer = zae.ReadBuffer();
-                                var fh = new Godot.File();
-                                fh.Open(iconPath,Godot.File.ModeFlags.Write);
-                                fh.StoreBuffer(buffer);
-                                fh.Close();
+                                var fh = FileAccess.Open(iconPath, FileAccess.ModeFlags.Write);
+                                if (fh != null) {
+                                    fh.StoreBuffer(buffer);
+                                    fh.Close();
+                                }
                             }
                         }
                     }
@@ -154,7 +155,7 @@ public class PaginatedListing : ScrollContainer
                     }
                 }
                 if (File.Exists(iconPath.GetOSDir().NormalizePath())) {
-                    Texture icon = Util.LoadImage(iconPath);
+                    Texture2D icon = Util.LoadImage(iconPath);
                     if (icon == null)
                         ale.Icon = Util.LoadImage("res://Assets/Icons/missing_icon.svg");
                     else
@@ -184,7 +185,7 @@ public class PaginatedListing : ScrollContainer
         ScrollVertical = 0;
         foreach(AssetLib.AssetResult asset in result.Result)
         {
-            AssetLibEntry ale = tAssetLibEntry.Instance<AssetLibEntry>();
+            AssetLibEntry ale = tAssetLibEntry.Instantiate<AssetLibEntry>();
             ale.Title = asset.Title;
             ale.Category = asset.Category;
             ale.Author = asset.Author;
@@ -221,7 +222,7 @@ public class PaginatedListing : ScrollContainer
                 dlq.Push(dld);
                 ale.SetMeta("dld", dld);
             } else {
-                Texture icon = Util.LoadImage(iconPath);
+                Texture2D icon = Util.LoadImage(iconPath);
                 if (icon == null)
                     ale.Icon = Util.LoadImage("res://Assets/Icons/missing_icon.svg");
                 else
@@ -236,14 +237,14 @@ public class PaginatedListing : ScrollContainer
         foreach(AssetLibEntry ale in _listing.GetChildren())
         {
             if (!ale.HasMeta("dld")) continue;
-            if ((ale.GetMeta("dld") as ImageDownloader) != dld) continue;
+            if ((ale.GetMeta("dld").As<ImageDownloader>()) != dld) continue;
             ale.RemoveMeta("dld");
-            string iconPath = ale.GetMeta("iconPath") as string;
+            string iconPath = ale.GetMeta("iconPath").AsString();
             if (File.Exists(iconPath.GetOSDir().NormalizePath())) {
-                Texture icon = Util.LoadImage(iconPath) ?? GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                Texture2D icon = Util.LoadImage(iconPath) ?? GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
                 ale.Icon = icon;
             } else {
-                ale.Icon = GD.Load<Texture>("res://Assets/Icons/missing_icon.svg");
+                ale.Icon = GD.Load<Texture2D>("res://Assets/Icons/missing_icon.svg");
             }
             return;
         }

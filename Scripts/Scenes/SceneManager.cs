@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public class SceneManager : Control
+public partial class SceneManager   : Control
 {
 	static Vector2 DEFAULT_RESOLUTION = new Vector2(1024,700);
 	static Vector2 UPDATE_RESOLUTION = new Vector2(600,50);
@@ -14,19 +14,19 @@ public class SceneManager : Control
 	{
 		string[] args = OS.GetCmdlineArgs();
 		if (args.Length > 0 && (args[0] == "--update" || args[0] == "--update-complete")) {
-			OS.MinWindowSize = UPDATE_RESOLUTION;
-			OS.WindowSize = UPDATE_RESOLUTION;
-			OS.CenterWindow();
-			UpdateWindow win = updateWindow.Instance<UpdateWindow>();
+			GetWindow().MinSize = (Vector2I)UPDATE_RESOLUTION;
+			GetWindow().Size = (Vector2I)UPDATE_RESOLUTION;
+			GetWindow().MoveToCenter();
+			UpdateWindow win = updateWindow.Instantiate<UpdateWindow>();
 			AddChild(win);
 			win.Visible = true;
 			win.StartUpdate(args);
 			//win.CallDeferred("StartUpdate",args);
 		} else {
-			OS.MinWindowSize = DEFAULT_RESOLUTION;
-			OS.WindowSize = DEFAULT_RESOLUTION;
-			OS.CenterWindow();
-			MainWindow win = mainWindow.Instance<MainWindow>();
+			GetWindow().MinSize = (Vector2I)DEFAULT_RESOLUTION;
+			GetWindow().Size = (Vector2I)DEFAULT_RESOLUTION;
+			GetWindow().MoveToCenter();
+			MainWindow win = mainWindow.Instantiate<MainWindow>();
 			AddChild(win);
 			
 			if (args.Length > 0) {
@@ -41,10 +41,10 @@ public class SceneManager : Control
 		UpdateWindow win = GetNode<UpdateWindow>("./UpdateWindow");
 		RemoveChild(win);
 		win.QueueFree();
-		OS.MinWindowSize = DEFAULT_RESOLUTION;
-		OS.WindowSize = DEFAULT_RESOLUTION;
-		OS.CenterWindow();
-		MainWindow mWin = mainWindow.Instance<MainWindow>();
+		GetWindow().MinSize = (Vector2I)DEFAULT_RESOLUTION;
+		GetWindow().Size = (Vector2I)DEFAULT_RESOLUTION;
+		GetWindow().MoveToCenter();
+		MainWindow mWin = mainWindow.Instantiate<MainWindow>();
 		AddChild(mWin);
 		mWin.Visible = true;
 	}

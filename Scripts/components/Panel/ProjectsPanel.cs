@@ -11,7 +11,7 @@ using DateTime = System.DateTime;
 using Array = Godot.Collections.Array;
 using System;
 
-public class ProjectsPanel : Panel
+public partial class ProjectsPanel   : Panel
 {
     #region Node Accessors
     [NodePath("VC/MC/HC/ActionButtons")]
@@ -94,7 +94,7 @@ public class ProjectsPanel : Panel
         _views.Add(_gridView);
         _views.Add(_categoryView);
 
-        _popupMenu = GD.Load<PackedScene>("res://components/ProjectPopup.tscn").Instance<ProjectPopup>();
+        _popupMenu = GD.Load<PackedScene>("res://components/ProjectPopup.tscn").Instantiate<ProjectPopup>();
 
         // Translations for Menu Items
         _popupMenu.UpdateTr(0, Tr("Open"));
@@ -104,17 +104,16 @@ public class ProjectsPanel : Panel
         _popupMenu.UpdateTr(4, Tr("Edit"));
         _popupMenu.UpdateTr(5, Tr("Remove"));
         AddChild(_popupMenu);
-        _popupMenu.SetAsToplevel(true);
 
-        AppDialogs.ImportProject.Connect("update_projects", this, "PopulateListing");
-        AppDialogs.CreateCategory.Connect("update_categories", this, "PopulateListing");
-        AppDialogs.RemoveCategory.Connect("update_categories", this, "PopulateListing");
-        AppDialogs.EditProject.Connect("project_updated", this, "PopulateListing");
-        AppDialogs.CreateProject.Connect("project_created", this, "OnProjectCreated");
+        AppDialogs.ImportProject.Connect("update_projects", Callable.From(PopulateListing));
+        AppDialogs.CreateCategory.Connect("update_categories", Callable.From(PopulateListing));
+        AppDialogs.RemoveCategory.Connect("update_categories", Callable.From(PopulateListing));
+        AppDialogs.EditProject.Connect("project_updated", Callable.From(PopulateListing));
+        AppDialogs.CreateProject.Connect("project_created", Callable.From<ProjectFile>(OnProjectCreated));
 
-        GetTree().Root.GetNode("SignalBus").Connect("update_projects", this, "PopulateListing");
+        GetTree().Root.GetNode("SignalBus").Connect("update_projects", Callable.From(PopulateListing));
 
-        GetTree().Connect("files_dropped", this, "OnFilesDropped");
+        GetWindow().Connect("files_dropped", Callable.From<string[]>(OnFilesDropped));
 
         _actionButtons.SetHidden(3);
         _actionButtons.SetHidden(4);
@@ -142,15 +141,12 @@ public class ProjectsPanel : Panel
             WaitForReady(ScanForProjects);
         }
 
-        _topBorder = _scrollContainer.RectGlobalPosition.y + _borderSize;
-        _bottomBorder = _scrollContainer.RectSize.y - _borderSize;
+        _topBorder = _scrollContainer.GlobalPosition.Y + _borderSize;
+        _bottomBorder = _scrollContainer.Size.Y - _borderSize;
 
         _scrollTimer = new Timer();
         AddChild(_scrollTimer);
-        _scrollTimer.Connect("timeout", this, "OnScrollTimer");
-
-        _scrollTween = new Tween();
-        AddChild(_scrollTween);
+        _scrollTimer.Connect("timeout", Callable.From(OnScrollTimer));
 
         PopulateListing();
     }
@@ -171,15 +167,15 @@ public class ProjectsPanel : Panel
         {
             if (!dragging)
                 return;
-            if (iemmEvent.Position.y <= _topBorder)
+            if (iemmEvent.Position.Y <= _topBorder)
             {
-                _scrollSpeed = Mathf.Clamp(iemmEvent.Position.y - _topBorder, -_borderSize, 0.0f);
+                _scrollSpeed = Mathf.Clamp(iemmEvent.Position.Y - _topBorder, -_borderSize, 0.0f);
                 if (_scrollSpeed == -_borderSize)
                     _scrollSpeed *= 2;
             }
-            else if (iemmEvent.Position.y >= _bottomBorder)
+            else if (iemmEvent.Position.Y >= _bottomBorder)
             {
-                _scrollSpeed = Mathf.Clamp(iemmEvent.Position.y - _bottomBorder, 0.0f, _borderSize);
+                _scrollSpeed = Mathf.Clamp(iemmEvent.Position.Y - _bottomBorder, 0.0f, _borderSize);
                 if (_scrollSpeed == _borderSize)
                     _scrollSpeed *= 2;
             }
@@ -190,7 +186,7 @@ public class ProjectsPanel : Panel
         }
     }
 
-    public void OnFilesDropped(string[] files, int screen)
+    public void OnFilesDropped(string[] files)
     {
         var file = new System.IO.FileInfo(files[0]);
         if (file.Exists && file.Name.Equals("project.godot"))
@@ -217,25 +213,22 @@ public class ProjectsPanel : Panel
             return;
         if (_scrollContainer.ScrollVertical == 0 && _scrollSpeed < 0)
             return;
-        if (_scrollContainer.ScrollVertical == _scrollContainer.GetVScrollbar().MaxValue && _scrollSpeed > 0)
+        if (_scrollContainer.ScrollVertical == _scrollContainer.GetVScrollBar().MaxValue && _scrollSpeed > 0)
             return;
-        if (_scrollTween.IsActive())
-            _scrollTween.StopAll();
-        _scrollTween.InterpolateProperty(
+        if (_scrollTween != null && _scrollTween.IsRunning())
+            _scrollTween.Kill();
+        _scrollTween = CreateTween();
+        _scrollTween.TweenProperty(
             _scrollContainer,
             "scroll_vertical",
-            _scrollContainer.ScrollVertical,
             _scrollContainer.ScrollVertical + _scrollSpeed,
-            0.24f,
-            Tween.TransitionType.Linear,
-            Tween.EaseType.Out);
-        _scrollTween.Start();
+            0.24f).SetTrans(Tween.TransitionType.Linear).SetEase(Tween.EaseType.Out);
         //_scrollContainer.ScrollVertical += (int)_scrollSpeed;
     }
 
     public ProjectLineEntry NewPLE(ProjectFile pf)
     {
-        ProjectLineEntry ple = _ProjectLineEntry.Instance<ProjectLineEntry>();
+        ProjectLineEntry ple = _ProjectLineEntry.Instantiate<ProjectLineEntry>();
         UpdatePLE(ple, pf);
         return ple;
     }
@@ -270,7 +263,7 @@ public class ProjectsPanel : Panel
 
     public ProjectIconEntry NewPIE(ProjectFile pf)
     {
-        ProjectIconEntry pie = _ProjectIconEntry.Instance<ProjectIconEntry>();
+        ProjectIconEntry pie = _ProjectIconEntry.Instantiate<ProjectIconEntry>();
         UpdatePIE(pie, pf);
         return pie;
     }
@@ -301,7 +294,7 @@ public class ProjectsPanel : Panel
 
     public CategoryList NewCL(string name)
     {
-        CategoryList clt = _CategoryList.Instance<CategoryList>();
+        CategoryList clt = _CategoryList.Instantiate<CategoryList>();
         clt.Toggable = true;
         clt.CategoryName = name;
         return clt;
@@ -311,49 +304,50 @@ public class ProjectsPanel : Panel
     {
         if (inode is ProjectLineEntry ple)
         {
-            ple.Connect("Clicked", this, "OnListEntry_Clicked");
-            ple.Connect("DoubleClicked", this, "OnListEntry_DoubleClicked");
-            ple.Connect("RightClicked", this, "OnListEntry_RightClicked");
-            ple.Connect("RightDoubleClicked", this, "OnListEntry_RightDoubleClicked");
-            ple.Connect("FavoriteUpdated", this, "OnListEntry_FavoriteUpdated");
+            ple.Connect("Clicked", Callable.From<ProjectLineEntry>(OnListEntry_Clicked));
+            ple.Connect("DoubleClicked", Callable.From<ProjectLineEntry>(OnListEntry_DoubleClicked));
+            ple.Connect("RightClicked", Callable.From<ProjectLineEntry>(OnListEntry_RightClicked));
+            ple.Connect("RightDoubleClicked", Callable.From<ProjectLineEntry>(OnListEntry_RightDoubleClicked));
+            ple.Connect("FavoriteUpdated", Callable.From<ProjectLineEntry>(OnListEntry_FavoriteUpdated));
             if (isCategory)
             {
-                ple.Connect("DragStarted", this, "OnDragStarted");
-                ple.Connect("DragEnded", this, "OnDragEnded");
+                ple.Connect("DragStarted", Callable.From<ProjectLineEntry>(OnDragStarted));
+                ple.Connect("DragEnded", Callable.From<ProjectLineEntry>(OnDragEnded));
             }
         }
         else if (inode is ProjectIconEntry pie)
         {
-            pie.Connect("Clicked", this, "OnIconEntry_Clicked");
-            pie.Connect("DoubleClicked", this, "OnIconEntry_DoubleClicked");
-            pie.Connect("RightClicked", this, "OnIconEntry_RightClicked");
-            pie.Connect("RightDoubleClicked", this, "OnIconEntry_RightDoubleClicked");
+            pie.Connect("Clicked", Callable.From<ProjectIconEntry>(OnIconEntry_Clicked));
+            pie.Connect("DoubleClicked", Callable.From<ProjectIconEntry>(OnIconEntry_DoubleClicked));
+            pie.Connect("RightClicked", Callable.From<ProjectIconEntry>(OnIconEntry_RightClicked));
+            pie.Connect("RightDoubleClicked", Callable.From<ProjectIconEntry>(OnIconEntry_RightDoubleClicked));
         }
     }
 
     Array<string> RecursiveScan(string path, string file)
     {
         var files = new Array<string>();
-        var dirHandle = new Directory();
-        if (dirHandle.Open(path) == Error.Ok)
+        var dirHandle = DirAccess.Open(path);
+        if (dirHandle != null)
         {
-            dirHandle.ListDirBegin(true);
+            dirHandle.ListDirBegin();
             var newPath = dirHandle.GetNext();
             while (!string.IsNullOrEmpty(newPath))
             {
+                if (newPath == "." || newPath == "..") { newPath = dirHandle.GetNext(); continue; }
                 if (dirHandle.DirExists(newPath))
                 {
-                    var newFiles = RecursiveScan(newPath, file);
+                    var newFiles = RecursiveScan(path.Join(newPath), file);
                     foreach (var x in newFiles) files.Add(x);
                 }
-                if (dirHandle.FileExists(newPath.Join(file)))
+                if (dirHandle.FileExists(path.Join(newPath, file)))
                     files.Add(path.Join(newPath, file));
                 newPath = dirHandle.GetNext();
             }
             dirHandle.ListDirEnd();
         }
 
-        dirHandle.Dispose();
+        dirHandle?.Dispose();
         return files;
     }
 
@@ -432,8 +426,8 @@ public class ProjectsPanel : Panel
                 AppDialogs.BrowseFolderDialog.CurrentFile = "";
                 AppDialogs.BrowseFolderDialog.CurrentPath = CentralStore.Settings.ProjectPath;
                 AppDialogs.BrowseFolderDialog.PopupCentered();
-                AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, "OnScanProjects_DirSelected", null, (int)ConnectFlags.Oneshot);
-                AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, "OnScanProjects_PopupHide", null, (int)ConnectFlags.Oneshot);
+                AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnScanProjects_DirSelected), (uint)ConnectFlags.OneShot);
+                AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnScanProjects_PopupHide), (uint)ConnectFlags.OneShot);
                 return;
             }
             else
@@ -471,15 +465,15 @@ public class ProjectsPanel : Panel
         CentralStore.Settings.ScanDirs.Clear();
         CentralStore.Settings.ScanDirs.Add(path);
         CentralStore.Instance.SaveDatabase();
-        AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, "OnScanProjects_DirSelected");
+        AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnScanProjects_DirSelected));
         ScanForProjects();
         PopulateListing();
     }
 
     void OnScanProjects_PopupHide()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, "OnScanProjects_DirSelected"))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, "OnScanProjects_DirSelected");
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnScanProjects_DirSelected)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnScanProjects_DirSelected));
     }
 
     // Optimizing PopulateListing() to utilize Cache of Nodes, adding and removing only as
@@ -518,9 +512,9 @@ public class ProjectsPanel : Panel
             catCache[cat] = clt;
             cpleCache[clt] = new Dictionary<ProjectFile, ProjectLineEntry>();
             _categoryView.AddChild(clt);
-            clt.Connect("list_toggled", this, "OnCategoryListToggled", new Array { clt });
-            clt.Connect("pin_toggled", this, "OnCategoryPinned", new Array() { clt });
-            clt.Connect("drag_drop_completed", this, "OnDragDropCompleted");
+            clt.Connect("list_toggled", Callable.From(() => OnCategoryListToggled(clt)));
+            clt.Connect("pin_toggled", Callable.From(() => OnCategoryPinned(clt)));
+            clt.Connect("drag_drop_completed", Callable.From<CategoryList, CategoryList, ProjectLineEntry>(OnDragDropCompleted));
         }
 
         if (clFavorites == null)
@@ -529,8 +523,8 @@ public class ProjectsPanel : Panel
             clFavorites.SetMeta("ID", -1);
             clFavorites.Toggled = CentralStore.Settings.FavoritesToggled;
             _categoryView.AddChild(clFavorites);
-            clFavorites.Connect("list_toggled", this, "OnCategoryListToggled", new Array { clFavorites });
-            clFavorites.Connect("drag_drop_completed", this, "OnDragDropCompleted");
+            clFavorites.Connect("list_toggled", Callable.From(() => OnCategoryListToggled(clFavorites)));
+            clFavorites.Connect("drag_drop_completed", Callable.From<CategoryList, CategoryList, ProjectLineEntry>(OnDragDropCompleted));
             cpleCache[clFavorites] = new Dictionary<ProjectFile, ProjectLineEntry>();
         }
 
@@ -540,8 +534,8 @@ public class ProjectsPanel : Panel
             clUncategorized.SetMeta("ID", -2);
             clUncategorized.Toggled = CentralStore.Settings.UncategorizedToggled;
             _categoryView.AddChild(clUncategorized);
-            clUncategorized.Connect("list_toggled", this, "OnCategoryListToggled", new Array { clUncategorized });
-            clUncategorized.Connect("drag_drop_completed", this, "OnDragDropCompleted");
+            clUncategorized.Connect("list_toggled", Callable.From(() => OnCategoryListToggled(clUncategorized)));
+            clUncategorized.Connect("drag_drop_completed", Callable.From<CategoryList, CategoryList, ProjectLineEntry>(OnDragDropCompleted));
             cpleCache[clUncategorized] = new Dictionary<ProjectFile, ProjectLineEntry>();
         }
 
@@ -746,7 +740,7 @@ public class ProjectsPanel : Panel
             foreach (ProjectLineEntry cple in _listView.GetChildren())
             {
                 if (cple != ple)
-                    cple.SelfModulate = new Color("00ffffff");
+                    cple.SelfModulate = new Color(1, 1, 1, 0); // was "00ffffff" (transparent in Godot 3, cyan in Godot 4)
             }
         }
         else
@@ -756,7 +750,7 @@ public class ProjectsPanel : Panel
                 foreach (ProjectLineEntry cple in cl.List.GetChildren())
                 {
                     if (cple != ple)
-                        cple.SelfModulate = new Color("00ffffff");
+                        cple.SelfModulate = new Color(1, 1, 1, 0);
                 }
             }
         }
@@ -820,7 +814,7 @@ public class ProjectsPanel : Panel
     {
         _popupMenu.ProjectLineEntry = ple;
         _popupMenu.ProjectIconEntry = null;
-        _popupMenu.Popup_(new Rect2(GetGlobalMousePosition(), _popupMenu.RectSize));
+        _popupMenu.Popup(new Rect2I((Vector2I)GetGlobalMousePosition(), (Vector2I)_popupMenu.Size));
     }
 
     void OnListEntry_RightDoubleClicked(ProjectLineEntry ple)
@@ -863,7 +857,7 @@ public class ProjectsPanel : Panel
     {
         _popupMenu.ProjectLineEntry = null;
         _popupMenu.ProjectIconEntry = pie;
-        _popupMenu.Popup_(new Rect2(GetGlobalMousePosition(), _popupMenu.RectSize));
+        _popupMenu.Popup(new Rect2I((Vector2I)GetGlobalMousePosition(), (Vector2I)_popupMenu.Size));
     }
 
     void OnIconEntry_RightDoubleClicked(ProjectIconEntry pie)
@@ -905,8 +899,8 @@ public class ProjectsPanel : Panel
                         string.Format(Tr("The data directory {0} does not exist!"), folder));
                 break;
             case 4:     // Edit Project File
-                AppDialogs.EditProject.Connect("project_updated", this, "OnProjectUpdated", new Array { pf });
-                AppDialogs.EditProject.Connect("hide", this, "OnHide_EditProject");
+                AppDialogs.EditProject.Connect("project_updated", Callable.From(() => OnProjectUpdated(pf)));
+                AppDialogs.EditProject.Connect("visibility_changed", Callable.From(OnHide_EditProject));
                 AppDialogs.EditProject.ShowDialog(pf);
                 break;
             case 5:     // Remove Project
@@ -937,8 +931,11 @@ public class ProjectsPanel : Panel
 
     private void OnHide_EditProject()
     {
-        AppDialogs.EditProject.Disconnect("project_updated", this, "OnProjectUpdated");
-        AppDialogs.EditProject.Disconnect("hide", this, "OnHide_EditProject");
+        // visibility_changed fires both when shown and hidden; only act when it actually hides.
+        if (AppDialogs.EditProject.Visible)
+            return;
+        AppDialogs.EditProject.Disconnect("project_updated", Callable.From<ProjectFile>(OnProjectUpdated));
+        AppDialogs.EditProject.Disconnect("visibility_changed", Callable.From(OnHide_EditProject));
     }
 
     private void RemoveMissingProjects()
@@ -996,7 +993,7 @@ public class ProjectsPanel : Panel
         foreach (ProjectIconEntry cpie in _gridView.GetChildren())
         {
             if (cpie != pie)
-                cpie.SelfModulate = new Color("00FFFFFF");
+                cpie.SelfModulate = new Color(1, 1, 1, 0);
         }
     }
 
@@ -1163,9 +1160,9 @@ public class ProjectsPanel : Panel
                 AppDialogs.BrowseFolderDialog.CurrentFile = "";
                 AppDialogs.BrowseFolderDialog.CurrentDir = CentralStore.Settings.ProjectPath;
                 AppDialogs.BrowseFolderDialog.CurrentPath = CentralStore.Settings.ProjectPath;
-                AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, "OnSearchProjects_DirSelected", null, (int)ConnectFlags.Oneshot);
-                AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, "OnSearchProjects_PopupHide", null, (int)ConnectFlags.Oneshot);
-                AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2(510, 390));
+                AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnSearchProjects_DirSelected), (uint)ConnectFlags.OneShot);
+                AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnSearchProjects_PopupHide), (uint)ConnectFlags.OneShot);
+                AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2I(510, 390));
                 // TODO: Implement Browse Folder to match missing projects.
                 break;
             case 7:
@@ -1234,8 +1231,8 @@ public class ProjectsPanel : Panel
 
     private async void OnSearchProjects_PopupHide()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, "OnSearchProjects_DirSelected"))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, "OnSearchProjects_DirSelected");
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnSearchProjects_DirSelected)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnSearchProjects_DirSelected));
     }
 
     private async Task RemoveProject(ProjectFile pf)
@@ -1268,24 +1265,25 @@ public class ProjectsPanel : Panel
 
     void RemoveFolders(string path)
     {
-        Directory dir = new Directory();
-        if (dir.Open(path) == Error.Ok)
+        var dir = DirAccess.Open(path);
+        if (dir != null)
         {
-            dir.ListDirBegin(true, false);
+            dir.ListDirBegin();
             var filename = dir.GetNext();
             while (filename != "")
             {
+                if (filename == "." || filename == "..") { filename = dir.GetNext(); continue; }
                 if (dir.CurrentIsDir())
                 {
-                    RemoveFolders(path.PlusFile(filename).NormalizePath());
+                    RemoveFolders(FPath.Join(path, filename).NormalizePath());
                 }
                 dir.Remove(filename);
                 filename = dir.GetNext();
             }
             dir.ListDirEnd();
         }
-        dir.Open(path.GetBaseDir());
-        dir.Remove(path.GetFile());
+        var parentDir = DirAccess.Open(path.GetBaseDir());
+        parentDir?.Remove(path.GetFile());
     }
 
     [SignalHandler("Clicked", nameof(_viewSelector))]

@@ -1,11 +1,11 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class AddonMirror : ReferenceRect
+public partial class AddonMirror   : ReferenceRect
 {
     #region Signals
     [Signal]
-    public delegate void asset_add_mirror(string protocol, string domainName, string pathTo);
+    public delegate void asset_add_mirrorEventHandler(string protocol, string domainName, string pathTo);
     #endregion
 
     #region Node Paths

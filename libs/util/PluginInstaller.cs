@@ -7,7 +7,7 @@ using SFile = System.IO.File;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 
-public class PluginInstaller : Object
+public partial class PluginInstaller   : GodotObject
 {
 	AssetPlugin _plugin;
 	public AssetPlugin AssetPlugin => _plugin;
@@ -211,7 +211,7 @@ public class PluginInstaller : Object
 			}
 		}
 
-		foreach(string dir in dirs.Reverse()) {
+		foreach(string dir in Enumerable.Reverse(dirs)) {
 			string path = dir.Substr(dir.IndexOf("/")+1,dir.Length);
 			if (needAddonsFolder)
 				if (subFolder != "")

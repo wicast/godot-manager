@@ -5,12 +5,12 @@ using Godot.Collections;
 using Godot.Sharp.Extras;
 using Directory = System.IO.Directory;
 
-public class CreateProject : ReferenceRect
+public partial class CreateProject   : ReferenceRect
 {
 
     #region Signals
     [Signal]
-    public delegate void project_created(ProjectFile projFile);
+    public delegate void project_createdEventHandler(ProjectFile projFile);
     #endregion
 
     #region Node Paths
@@ -67,14 +67,14 @@ public class CreateProject : ReferenceRect
     #endregion
 
     #region Resources
-    Texture StatusError = GD.Load<Texture>("res://Assets/Icons/icon_status_error.svg");
-    Texture StatusSuccess = GD.Load<Texture>("res://Assets/Icons/icon_status_success.svg");
-    Texture StatusWarning = GD.Load<Texture>("res://Assets/Icons/icon_status_warning.svg");
+    Texture2D StatusError = GD.Load<Texture2D>("res://Assets/Icons/icon_status_error.svg");
+    Texture2D StatusSuccess = GD.Load<Texture2D>("res://Assets/Icons/icon_status_success.svg");
+    Texture2D StatusWarning = GD.Load<Texture2D>("res://Assets/Icons/icon_status_warning.svg");
     #endregion
 
     #region Assets
     [Resource("res://components/AddonLineEntry.tscn")] private PackedScene ALineEntry = null;
-    [Resource("res://Assets/Icons/default_project_icon.png")] private Texture DefaultIcon = null;
+    [Resource("res://Assets/Icons/default_project_icon.png")] private Texture2D DefaultIcon = null;
     #endregion
 
     #region Variables
@@ -119,7 +119,7 @@ public class CreateProject : ReferenceRect
     [SignalHandler("pressed", nameof(_createBtn))]
     void OnCreatePressed()
     {
-        var id = _godotVersion.GetSelectedMetadata() as string;
+        var id = _godotVersion.GetSelectedMetadata().AsString();
         var vers = CentralStore.Versions.FirstOrDefault(x => x.Id == id);
         if (vers == null)
         {
@@ -130,27 +130,27 @@ public class CreateProject : ReferenceRect
         {
             ProjectName = _projectName.Text,
             ProjectLocation = _projectLocation.Text,
-            GodotVersion = _godotVersion.GetSelectedMetadata() as string,
-            Gles3 = _gles3.Pressed,
-            Godot4 = _useGodot4.Pressed,
+            GodotVersion = _godotVersion.GetSelectedMetadata().AsString(),
+            Gles3 = _gles3.ButtonPressed,
+            Godot4 = _useGodot4.ButtonPressed,
             IsCSharp = vers.IsMono,
             GodotMajor = vers.Tag.Split(".")[0].ToInt(),
             GodotMinor = vers.Tag.Split(".")[1].Split("-")[0].ToInt(),
             Plugins = new Array<AssetPlugin>()
         };
         if (_projectTemplates.Selected > 0)
-            prj.Template = _projectTemplates.GetSelectedMetadata() as AssetProject;
+            prj.Template = _projectTemplates.GetSelectedMetadata().As<AssetProject>();
 
         foreach (AddonLineEntry ale in _pluginList.GetChildren())
         {
             if (ale.Installed)
             {
-                prj.Plugins.Add(ale.GetMeta("asset") as AssetPlugin);
+                prj.Plugins.Add(ale.GetMeta("asset").As<AssetPlugin>());
             }
         }
 
         prj.CreateProject();
-        ProjectFile pf = ProjectFile.ReadFromFile(prj.ProjectLocation.PlusFile("project.godot").NormalizePath());
+        ProjectFile pf = ProjectFile.ReadFromFile(System.IO.Path.Join(prj.ProjectLocation, "project.godot").NormalizePath());
         pf.GodotVersion = prj.GodotVersion;
         pf.Assets = new Array<string>();
 
@@ -178,9 +178,9 @@ public class CreateProject : ReferenceRect
     {
         AppDialogs.BrowseFolderDialog.CurrentFile = "";
         AppDialogs.BrowseFolderDialog.CurrentPath = (CentralStore.Settings.ProjectPath + "/").NormalizePath();
-        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2(510, 390));
-        AppDialogs.BrowseFolderDialog.Connect("dir_selected", this, "OnDirSelected", null, (int)ConnectFlags.Oneshot);
-        AppDialogs.BrowseFolderDialog.Connect("popup_hide", this, "OnDirSelected_PopupHidden", null, (int)ConnectFlags.Oneshot);
+        AppDialogs.BrowseFolderDialog.PopupCentered(new Vector2I(510, 390));
+        AppDialogs.BrowseFolderDialog.Connect("dir_selected", Callable.From<string>(OnDirSelected), (uint)ConnectFlags.OneShot);
+        AppDialogs.BrowseFolderDialog.Connect("popup_hide", Callable.From(OnDirSelected_PopupHidden), (uint)ConnectFlags.OneShot);
     }
 
     void OnDirSelected(string bfdir)
@@ -188,8 +188,8 @@ public class CreateProject : ReferenceRect
         bfdir = bfdir.NormalizePath();
         _projectLocation.Text = bfdir;
         AppDialogs.BrowseFolderDialog.Visible = false;
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, "OnDirSelected"))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, "OnDirSelected");
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnDirSelected));
         TestPath(bfdir);
         if (bfdir.IsDirEmpty() && _projectName.Text == "Untitled Project")
             _projectName.Text = bfdir.GetFile().Capitalize();
@@ -197,8 +197,8 @@ public class CreateProject : ReferenceRect
 
     void OnDirSelected_PopupHidden()
     {
-        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", this, "OnDirSelected"))
-            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", this, "OnDirSelected");
+        if (AppDialogs.BrowseFolderDialog.IsConnected("dir_selected", Callable.From<string>(OnDirSelected)))
+            AppDialogs.BrowseFolderDialog.Disconnect("dir_selected", Callable.From<string>(OnDirSelected));
     }
 
     [SignalHandler("toggled", nameof(_useGodot3))]
@@ -247,8 +247,8 @@ Faster rendering of simple scenes.");
 
         PopulateEngines(true);
 
-        _gles3.Pressed = true;
-        _gles2.Pressed = false;
+        _gles3.ButtonPressed = true;
+        _gles2.ButtonPressed = false;
 
         _projectTemplates.Clear();
         _projectTemplates.AddItem("None");
@@ -266,7 +266,7 @@ Faster rendering of simple scenes.");
             string imgLoc =
                 $"{CentralStore.Settings.CachePath}/images/{plgn.Asset.AssetId}{plgn.Asset.IconUrl.GetExtension()}"
                     .NormalizePath();
-            AddonLineEntry ale = ALineEntry.Instance<AddonLineEntry>();
+            AddonLineEntry ale = ALineEntry.Instantiate<AddonLineEntry>();
 
             ale.Icon = Util.LoadImage(imgLoc);
             if (ale.Icon == null) ale.Icon = DefaultIcon;
@@ -293,7 +293,7 @@ Faster rendering of simple scenes.");
                 {
                     if (defaultEngine.IsGodot4())
                     {
-                        _useGodot4.Pressed = true;
+                        _useGodot4.ButtonPressed = true;
                     }
                 }
             }
@@ -303,7 +303,7 @@ Faster rendering of simple scenes.");
         var indx = 0;
         foreach (GodotVersion version in CentralStore.Versions)
         {
-            if (_useGodot4.Pressed == version.IsGodot4())
+            if (_useGodot4.ButtonPressed == version.IsGodot4())
             {
                 string gdName = version.GetDisplayName();
                 if (version.Id == (string)CentralStore.Settings.DefaultEngine)

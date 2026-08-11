@@ -10,7 +10,7 @@ using Directory = System.IO.Directory;
 using SFile = System.IO.File;
 using System.IO.Compression;
 
-public class AssetLibPanel : Panel
+public partial class AssetLibPanel   : Panel
 {
 #region Nodes Path
     #region Search Switcher
@@ -102,7 +102,7 @@ public class AssetLibPanel : Panel
         this.OnReady();
         lastConfigureRequest = DateTime.Now - TimeSpan.FromHours(3);
         lastSearchRequest = DateTime.Now - TimeSpan.FromMinutes(6);
-        GetParent<TabContainer>().Connect("tab_changed", this, "OnPageChanged");
+        GetParent<TabContainer>().Connect("tab_changed", Callable.From<int>(OnPageChanged));
         _mirrorSite.Clear();
         foreach (Dictionary<string, string> mirror in CentralStore.Settings.AssetMirrors) {
             var indx = _mirrorSite.GetItemCount();
@@ -126,32 +126,32 @@ public class AssetLibPanel : Panel
     [SignalHandler("pressed", nameof(_import))]
     async void OnImportPressed()
     {
-        AppDialogs.ImportFileDialog.Connect("popup_hide", this, "OnImportClosed", null, (uint)ConnectFlags.Oneshot);
+        AppDialogs.ImportFileDialog.Connect("popup_hide", Callable.From(OnImportClosed), (uint)ConnectFlags.OneShot);
         var result = await AppDialogs.YesNoCancelDialog.ShowDialog(Tr("Import Asset..."),
             Tr("Do you wish to import a Template or an Addon?"),
             Tr("Template"),Tr("Addon"),Tr("Cancel"));
         if (result == YesNoCancelDialog.ActionResult.FirstAction) {
-            AppDialogs.ImportFileDialog.WindowTitle = Tr("Import Template...");
+            AppDialogs.ImportFileDialog.Title = Tr("Import Template...");
             AppDialogs.ImportFileDialog.Filters = new string[] { "project.godot", "*.zip" };
-            AppDialogs.ImportFileDialog.Connect("file_selected", this, "OnTemplateImport");
+            AppDialogs.ImportFileDialog.Connect("file_selected", Callable.From<string>(OnTemplateImport));
         } else if (result == YesNoCancelDialog.ActionResult.SecondAction) {
-            AppDialogs.ImportFileDialog.WindowTitle = Tr("Import Plugin...");
+            AppDialogs.ImportFileDialog.Title = Tr("Import Plugin...");
             AppDialogs.ImportFileDialog.Filters = new string[] { "plugin.cfg", "*.zip" };
-            AppDialogs.ImportFileDialog.Connect("file_selected", this, "OnPluginImport");
+            AppDialogs.ImportFileDialog.Connect("file_selected", Callable.From<string>(OnPluginImport));
         } else {
             return;
         }
         AppDialogs.ImportFileDialog.CurrentFile = "";
         AppDialogs.ImportFileDialog.CurrentPath = "";
-        AppDialogs.ImportFileDialog.PopupCentered(new Vector2(510, 390));
+        AppDialogs.ImportFileDialog.PopupCentered(new Vector2I(510, 390));
     }
 
     void OnImportClosed() {
-        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", this, "OnTemplateImport"))
-            AppDialogs.ImportFileDialog.Disconnect("file_selected", this, "OnTemplateImport");
+        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", Callable.From<string>(OnTemplateImport)))
+            AppDialogs.ImportFileDialog.Disconnect("file_selected", Callable.From<string>(OnTemplateImport));
 
-        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", this, "OnPluginImport"))
-            AppDialogs.ImportFileDialog.Disconnect("file_selected", this, "OnPluginImport");
+        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", Callable.From<string>(OnPluginImport)))
+            AppDialogs.ImportFileDialog.Disconnect("file_selected", Callable.From<string>(OnPluginImport));
     }
 
     void OnPluginImport(string filepath) {
@@ -186,19 +186,19 @@ public class AssetLibPanel : Panel
     async void OnSupportPopup_IdPressed(int id)
     {
         _supportPopup.SetItemChecked(id, !_supportPopup.IsItemChecked(id));
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     [SignalHandler("pressed", nameof(_support))]
     void OnSupportPressed() {
-        _supportPopup.Popup_(new Rect2(_support.RectGlobalPosition + new Vector2(0,_support.RectSize.y), _supportPopup.RectSize));
+        _supportPopup.Popup(new Rect2I((Vector2I)(_support.GlobalPosition + new Vector2(0,_support.Size.Y)), (Vector2I)_supportPopup.Size));
     }
 
     [SignalHandler("timeout", nameof(_executeDelay))]
     async void OnExecuteDelay_Timeout() {
         if (lastSearch == _searchField.Text)
             return;
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
         lastSearch = _searchField.Text;
     }
 
@@ -207,25 +207,25 @@ public class AssetLibPanel : Panel
         _executeDelay.Start();
     }
 
-    [SignalHandler("text_entered", nameof(_searchField))]
+    [SignalHandler("text_submitted", nameof(_searchField))]
     async void OnSearchField_TextEntered(string text) {
         if (!_executeDelay.IsStopped())
             _executeDelay.Stop();
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     [SignalHandler("item_selected", nameof(_category))]
     async void OnCategorySelected(int index) {
         _plaCurrentPage = 0;
         _pltCurrentPage = 0;
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     [SignalHandler("item_selected", nameof(_sortBy))]
     async void OnSortBySelected(int index) {
         _plaCurrentPage = 0;
         _pltCurrentPage = 0;
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     [SignalHandler("item_selected", nameof(_godotVersion))]
@@ -233,7 +233,7 @@ public class AssetLibPanel : Panel
     {
         _plaCurrentPage = 0;
         _pltCurrentPage = 0;
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     [SignalHandler("page_changed", nameof(_plAddons))]
@@ -250,8 +250,8 @@ public class AssetLibPanel : Panel
 
     [SignalHandler("pressed", nameof(_addonsBtn))]
     async void OnAddonsPressed() {
-        _templatesBtn.Pressed = false;
-        _manageBtn.Pressed = false;
+        _templatesBtn.ButtonPressed = false;
+        _manageBtn.ButtonPressed = false;
         _plTemplates.Visible = false;
         _plAddons.Visible = true;
         _searchContainer.Visible = true;
@@ -262,8 +262,8 @@ public class AssetLibPanel : Panel
 
     [SignalHandler("pressed", nameof(_templatesBtn))]
     async void OnTemplatesPressed() {
-        _addonsBtn.Pressed = false;
-        _manageBtn.Pressed = false;
+        _addonsBtn.ButtonPressed = false;
+        _manageBtn.ButtonPressed = false;
         _plTemplates.Visible = true;
         _plAddons.Visible = false;
         _searchContainer.Visible = true;
@@ -274,13 +274,13 @@ public class AssetLibPanel : Panel
 
     [SignalHandler("pressed", nameof(_manageBtn))]
     async void OnManagePressed() {
-        _addonsBtn.Pressed = false;
-        _templatesBtn.Pressed = false;
+        _addonsBtn.ButtonPressed = false;
+        _templatesBtn.ButtonPressed = false;
         _plTemplates.Visible = false;
         _plAddons.Visible = false;
         _searchContainer.Visible = false;
         _manageContainer.Visible = true;
-        if (_mTemplateBtn.Pressed)
+        if (_mTemplateBtn.ButtonPressed)
             await UpdatePaginatedListing(_plmTemplates);
         else
             await UpdatePaginatedListing(_plmAddons);
@@ -289,18 +289,18 @@ public class AssetLibPanel : Panel
     [SignalHandler("pressed", nameof(_mAddonsBtn))]
     async void OnManageAddonPressed() {
         _plmAddons.Visible = true;
-        _mAddonsBtn.Pressed = true;
+        _mAddonsBtn.ButtonPressed = true;
         _plmTemplates.Visible = false;
-        _mTemplateBtn.Pressed = false;
+        _mTemplateBtn.ButtonPressed = false;
         await UpdatePaginatedListing(_plmAddons);
     }
 
     [SignalHandler("pressed", nameof(_mTemplateBtn))]
     async void OnManageTemplatePressed() {
         _plmAddons.Visible = false;
-        _mAddonsBtn.Pressed = false;
+        _mAddonsBtn.ButtonPressed = false;
         _plmTemplates.Visible = true;
-        _mTemplateBtn.Pressed = true;
+        _mTemplateBtn.ButtonPressed = true;
         await UpdatePaginatedListing(_plmTemplates);
     }
 
@@ -308,24 +308,24 @@ public class AssetLibPanel : Panel
         if (GetParent<TabContainer>().GetCurrentTabControl() == this)
 		{
             if ((DateTime.Now - lastConfigureRequest) >= defaultWaitConfigure) {
-			    await Configure(_templatesBtn.Pressed);
+			    await Configure(_templatesBtn.ButtonPressed);
                 if (_category.GetItemCount() == 1)
                     return;
             }
 
             if ((DateTime.Now - lastSearchRequest) >= defaultWaitSearch) {
-			    await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+			    await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
             }
 		}
 	}
 
     [SignalHandler("item_selected", nameof(_mirrorSite))]
     async void OnMirrorSiteSelected(int indx) {
-        await Configure(_templatesBtn.Pressed);
+        await Configure(_templatesBtn.ButtonPressed);
         if (_category.GetItemCount() == 1)
             return;
         
-        await UpdatePaginatedListing(_addonsBtn.Pressed ? _plAddons : _plTemplates);
+        await UpdatePaginatedListing(_addonsBtn.ButtonPressed ? _plAddons : _plTemplates);
     }
 
     AssetLib.Asset CreateAssetDirectory(string filepath, bool is_plugin) {
@@ -334,10 +334,10 @@ public class AssetLibPanel : Panel
             ConfigFile cfg = new ConfigFile();
             cfg.Load(filepath);
             asset.Type = "addon";
-            asset.Title = cfg.GetValue("plugin","name") as string;
-            asset.Author = cfg.GetValue("plugin","author") as string;
-            asset.VersionString = cfg.GetValue("plugin","version") as string;
-            asset.Description = cfg.GetValue("plugin","description") as string;
+            asset.Title = cfg.GetValue("plugin","name").AsString();
+            asset.Author = cfg.GetValue("plugin","author").AsString();
+            asset.VersionString = cfg.GetValue("plugin","version").AsString();
+            asset.Description = cfg.GetValue("plugin","description").AsString();
             asset.IconUrl = "res://Assets/Icons/default_project_icon.png";
         } else {
             ProjectConfig pc = new ProjectConfig(filepath);
@@ -391,10 +391,10 @@ public class AssetLibPanel : Panel
             
             
             asset.Type = "addon";
-            asset.Title = cfg.GetValue("plugin","name") as string;
-            asset.Author = cfg.GetValue("plugin","author") as string;
-            asset.VersionString = cfg.GetValue("plugin","version") as string;
-            asset.Description = cfg.GetValue("plugin","description") as string;
+            asset.Title = cfg.GetValue("plugin","name").AsString();
+            asset.Author = cfg.GetValue("plugin","author").AsString();
+            asset.VersionString = cfg.GetValue("plugin","version").AsString();
+            asset.Description = cfg.GetValue("plugin","description").AsString();
             asset.IconUrl = "res://Assets/Icons/default_project_icon.png";
         } else {
             ProjectConfig pc = new ProjectConfig();
@@ -505,7 +505,7 @@ public class AssetLibPanel : Panel
 
     async void AssetZipImport(string filepath, bool is_plugin) {
         string zipFile = filepath.NormalizePath();
-        string zipName = zipFile.GetFile().BaseName();
+        string zipName = zipFile.GetFile().GetBaseName();
         string newZipFile = $"{CentralStore.Settings.CachePath}/AssetLib/local-{CentralStore.Settings.LocalAddonCount}-{zipName}.zip";
         SFile.Copy(zipFile, newZipFile);
         AssetLib.Asset asset = CreateAssetZip(filepath, is_plugin);
@@ -535,14 +535,14 @@ public class AssetLibPanel : Panel
 
         string url = (string)_mirrorSite.GetItemMetadata(_mirrorSite.Selected);
 
-		AssetLib.AssetLib.Instance.Connect("chunk_received", this, "OnChunkReceived");
+		AssetLib.AssetLib.Instance.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
 		var task = AssetLib.AssetLib.Instance.Configure(url,projectsOnly);
 		while (!task.IsCompleted)
 		{
 			await this.IdleFrame();
 		}
 
-		AssetLib.AssetLib.Instance.Disconnect("chunk_received", this, "OnChunkReceived");
+		AssetLib.AssetLib.Instance.Disconnect("chunk_received", Callable.From<int>(OnChunkReceived));
 
         if (task.Result == null)
         {
@@ -559,7 +559,7 @@ public class AssetLibPanel : Panel
 		AssetLib.ConfigureResult configureResult = task.Result;
 
         if (configureResult == null) {
-            PaginatedListing pl = _addonsBtn.Pressed ? _plAddons : _plTemplates;
+            PaginatedListing pl = _addonsBtn.ButtonPressed ? _plAddons : _plTemplates;
             pl.ClearResults();
             AppDialogs.BusyDialog.HideDialog();
             AppDialogs.MessageDialog.ShowMessage(Tr("Asset Library"),string.Format(Tr("Unable to connect to {0}."),url));
@@ -571,6 +571,11 @@ public class AssetLibPanel : Panel
 			_category.AddItem(category.Name, category.Id.ToInt());
 		}
         lastConfigureRequest = DateTime.Now;
+	}
+
+	private void OnChunkReceived(int size)
+	{
+		// Progress callback from the AssetLib download; nothing to do per-chunk.
 	}
 
     private string[] GetSupport() {

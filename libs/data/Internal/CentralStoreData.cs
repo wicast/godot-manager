@@ -4,7 +4,7 @@ using GodotManager.libs.data.Internal;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CentralStoreData : Object {
+public partial class CentralStoreData   : GodotObject {
 	[JsonProperty] public Array<ProjectFile> Projects;
 	[JsonProperty] public Array<GodotVersion> Versions;
 	[JsonProperty] public Array<GithubVersion> GHVersions;

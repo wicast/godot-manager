@@ -1,7 +1,7 @@
 using Godot;
 using Environment = System.Environment;
 
-public class Platform : Node
+public partial class Platform   : Node
 {
     public static string OperatingSystem
     {

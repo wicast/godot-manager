@@ -2,7 +2,7 @@ using Godot;
 using Godot.Sharp.Extras;
 using System;
 
-public class BusyDialog : ReferenceRect
+public partial class BusyDialog   : ReferenceRect
 {
     [NodePath("PC/CC/P/VB/MCContent/VBoxContainer/Header")]
     public Label Header = null;
@@ -11,7 +11,7 @@ public class BusyDialog : ReferenceRect
     public Label Byline = null;
 
     [NodePath("PC/CC/P/VB/MCContent/Spinner")]
-    public AnimatedSprite Spinner = null;
+    public AnimatedSprite2D Spinner = null;
     // Declare member variables here. Examples:
     // private int a = 2;
     // private string b = "text";

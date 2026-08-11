@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace Github {
-	public class DefaultSettings {
+	public partial class DefaultSettings   {
 		public static DefaultContractResolver contractResolver = new DefaultContractResolver {
 			NamingStrategy = new SnakeCaseNamingStrategy()
 		};

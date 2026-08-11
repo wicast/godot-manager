@@ -10,7 +10,7 @@ using GodotManager.libs.data.Internal;
 using GodotManager.libs.util;
 using Array = Godot.Collections.Array;
 
-public class NewsPanel : Panel
+public partial class NewsPanel   : Panel
 {
     [NodePath] private VBoxContainer NewsList = null;
     [NodePath] private TextureRect RefreshIcon = null;
@@ -30,7 +30,7 @@ public class NewsPanel : Panel
         _queue.Name = "DownloadQueue";
         AddChild(_queue);
         this.OnReady();
-        GetParent<TabContainer>().Connect("tab_changed", this, "OnPageChanged");
+        GetParent<TabContainer>().Connect("tab_changed", Callable.From<int>(OnPageChanged));
     }
 
     private void OnPageChanged(int page)
@@ -47,7 +47,7 @@ public class NewsPanel : Panel
         if (!(@event is InputEventMouseButton iemb))
             return;
 
-        if (iemb.ButtonIndex == 1 && iemb.Pressed)
+        if (iemb.ButtonIndex == MouseButton.Left && iemb.Pressed)
             RefreshNews();
     }
 
@@ -65,7 +65,7 @@ public class NewsPanel : Panel
         else
             _client.ClearProxy();
 
-        Task<HTTPClient.Status> cres = _client.StartClient(AUTHOR_URI.Host, AUTHOR_URI.Port, true);
+        Task<GDCSHTTPClient.Status> cres = _client.StartClient(AUTHOR_URI.Host, AUTHOR_URI.Port, true);
 
         while (!cres.IsCompleted)
             await this.IdleFrame();
@@ -99,10 +99,10 @@ public class NewsPanel : Panel
         foreach (var (author, index) in authors.WithIndex())
         {
             AppDialogs.BusyDialog.UpdateByline($"Parsing {index} of {authors.Length} ");
-            if (author.BeginsWith("- name: "))
+            if (author.StartsWith("- name: "))
                 currentAuthor.Name = author.Replace("- name: ", "");
 
-            if (author.BeginsWith("  image: "))
+            if (author.StartsWith("  image: "))
                 currentAuthor.AvatarUrl = author.Replace("  image: ", "");
 
             if (!currentAuthor.HasAll()) continue;
@@ -129,7 +129,7 @@ public class NewsPanel : Panel
         else
             _client.ClearProxy();
 
-        Task<HTTPClient.Status> cres = _client.StartClient(NEWS_URI.Host, NEWS_URI.Port, true);
+        Task<GDCSHTTPClient.Status> cres = _client.StartClient(NEWS_URI.Host, NEWS_URI.Port, true);
         
         while (!cres.IsCompleted)
             await this.IdleFrame();
@@ -158,39 +158,39 @@ public class NewsPanel : Panel
 
         AppDialogs.BusyDialog.UpdateByline(Tr("Parsing news entries..."));
 
-        var jsonResponse = JSON.Parse(result.Body);
+        var jsonResponse = Json.ParseString(result.Body);
 
-        if (jsonResponse.Error != Error.Ok)
+        if (jsonResponse.VariantType == Variant.Type.Nil)
         {
             CleanupClient();
             AppDialogs.BusyDialog.HideDialog();
-            AppDialogs.MessageDialog.ShowMessage("Fetch News Error", $"Failed to parse news entries from website.  (Error Code: {jsonResponse.Error}");
+            AppDialogs.MessageDialog.ShowMessage("Fetch News Error", $"Failed to parse news entries from website.");
             return;
         }
 
-        var entries = jsonResponse.Result as Dictionary;
-        if (entries is null || !entries.Contains("title"))
+        var entries = jsonResponse.AsGodotDictionary();
+        if (!entries.ContainsKey("title"))
         {
             AppDialogs.BusyDialog.HideDialog();
             AppDialogs.MessageDialog.ShowMessage("Parse News Error", $"Invalid data returned when attempting to fetch RSS Feed.");
             return;
         }
 
-        foreach (var item in (Array)entries["items"])
+        foreach (var item in entries["items"].AsGodotArray())
         {
-            var nitem = (Dictionary)item;
-            var newsItem = NewsItem.Instance<NewsItem>();
+            var nitem = item.AsGodotDictionary();
+            var newsItem = NewsItem.Instantiate<NewsItem>();
 
-            newsItem.Headline = "    " + (string)nitem["title"];
-            newsItem.Byline = $"    {(string)nitem["dc:creator"]} - {((string)nitem["pubDate"]).Replace("&nbsp;", " ")}";
-            newsItem.Url = (string)nitem["guid"];
-            newsItem.Blerb = (string)nitem["description"];
+            newsItem.Headline = "    " + nitem["title"].AsString();
+            newsItem.Byline = $"    {nitem["dc:creator"].AsString()} - {nitem["pubDate"].AsString().Replace("&nbsp;", " ")}";
+            newsItem.Url = nitem["guid"].AsString();
+            newsItem.Blerb = nitem["description"].AsString();
 
-            Uri uri = new Uri((string)nitem["image"]);
+            Uri uri = new Uri(nitem["image"].AsString());
             string imgPath = $"{CentralStore.Settings.CachePath}/images/news/{uri.AbsolutePath.GetFile()}";
             if (!SFile.Exists(imgPath.GetOSDir().NormalizePath()))
             {
-                ImageDownloader dld = new ImageDownloader((string)nitem["image"], imgPath);
+                ImageDownloader dld = new ImageDownloader(nitem["image"].AsString(), imgPath);
                 _queue.Push(dld);
                 newsItem.SetMeta("imgPath", imgPath);
                 newsItem.SetMeta("dld", dld);
@@ -198,7 +198,7 @@ public class NewsPanel : Panel
             else
                 newsItem.Image = imgPath.GetOSDir().NormalizePath();
 
-            var avatar = CentralStore.AuthorEntries.FirstOrDefault(x => x.Name == (string)nitem["dc:creator"]);
+            var avatar = CentralStore.AuthorEntries.FirstOrDefault(x => x.Name == nitem["dc:creator"].AsString());
             if (avatar is null) avatar = CentralStore.AuthorEntries.FirstOrDefault(x => x.Name == "default");
             if (avatar != null)
             {
@@ -206,16 +206,16 @@ public class NewsPanel : Panel
                 imgPath = $"{CentralStore.Settings.CachePath}/images/news/{uri.AbsolutePath.GetFile()}";
                 if (!SFile.Exists(imgPath.GetOSDir().NormalizePath()))
                 {
-                    if (_queue.Queued.All(x => x.Tag != (string)nitem["dc:creator"]))
+                    if (_queue.Queued.All(x => x.Tag != nitem["dc:creator"].AsString()))
                     {
-                        ImageDownloader dld = new ImageDownloader(uri.ToString(), imgPath, (string)nitem["dc:creator"]);
+                        ImageDownloader dld = new ImageDownloader(uri.ToString(), imgPath, nitem["dc:creator"].AsString());
                         _queue.Push(dld);
                         newsItem.SetMeta("avatarPath", imgPath);
                         newsItem.SetMeta("avatarDld", dld);
                     }
                     else
                     {
-                        var dld = _queue.Queued.FirstOrDefault(x => x.Tag == (string)nitem["dc:creator"]);
+                        var dld = _queue.Queued.FirstOrDefault(x => x.Tag == nitem["dc:creator"].AsString());
                         newsItem.SetMeta("avatarPath", imgPath);
                         newsItem.SetMeta("avatarDld", dld);
                     }
@@ -237,10 +237,10 @@ public class NewsPanel : Panel
         {
             if (item.HasMeta("dld"))
             {
-                if ((item.GetMeta("dld") as ImageDownloader) == dld)
+                if ((item.GetMeta("dld").As<ImageDownloader>()) == dld)
                 {
                     item.RemoveMeta("dld");
-                    string imgPath = item.GetMeta("imgPath") as string;
+                    string imgPath = item.GetMeta("imgPath").AsString();
                     if (SFile.Exists(imgPath.GetOSDir().NormalizePath()))
                     {
                         item.Image = imgPath.GetOSDir().NormalizePath();
@@ -256,10 +256,10 @@ public class NewsPanel : Panel
 
             if (item.HasMeta("avatarDld"))
             {
-                if ((item.GetMeta("avatarDld") as ImageDownloader) == dld)
+                if ((item.GetMeta("avatarDld").As<ImageDownloader>()) == dld)
                 {
                     item.RemoveMeta("avatarDld");
-                    var avatarPath = item.GetMeta("avatarPath") as string;
+                    var avatarPath = item.GetMeta("avatarPath").AsString();
                     if (SFile.Exists(avatarPath.GetOSDir().NormalizePath()))
                     {
                         item.Avatar = avatarPath.GetOSDir().NormalizePath();
@@ -278,12 +278,12 @@ public class NewsPanel : Panel
         if (_client != null)
             CleanupClient();
         _client = new GDCSHTTPClient();
-        _client.Connect("chunk_received", this, "OnChunkReceived");
+        _client.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
     }
 
     private void CleanupClient()
     {
-        _client.Disconnect("chunk_received", this, "OnChunkReceived");
+        _client.Disconnect("chunk_received", Callable.From<int>(OnChunkReceived));
         _client.QueueFree();
         _client = null;
     }

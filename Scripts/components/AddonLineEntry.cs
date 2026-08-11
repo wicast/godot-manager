@@ -2,10 +2,10 @@ using Godot;
 using Godot.Collections;
 using Godot.Sharp.Extras;
 
-public class AddonLineEntry : ColorRect
+public partial class AddonLineEntry   : ColorRect
 {
     #region Signals
-    [Signal] public delegate void install_clicked(bool value);
+    [Signal] public delegate void install_clickedEventHandler(bool value);
     #endregion
     
     #region Node Paths
@@ -16,19 +16,19 @@ public class AddonLineEntry : ColorRect
     #endregion
     
     #region Resources
-    [Resource("res://Assets/Icons/icon_add.svg")] private Texture IconAdd = null;
-    [Resource("res://Assets/Icons/x.svg")] private Texture IconCancel = null;
+    [Resource("res://Assets/Icons/icon_add.svg")] private Texture2D IconAdd = null;
+    [Resource("res://Assets/Icons/x.svg")] private Texture2D IconCancel = null;
     #endregion
     
     #region Private Variables
-    private Texture _icon = null;
+    private Texture2D _icon = null;
     private string _title = null;
     private string _version = null;
     private bool _installed = false;
     #endregion
     
     #region Public Variables
-    public Texture Icon
+    public Texture2D Icon
     {
         get => AddonIcon != null ? AddonIcon.Texture : _icon;
         set
@@ -91,7 +91,7 @@ public class AddonLineEntry : ColorRect
     [SignalHandler("gui_input", nameof(InstallUninstall))]
     void OnGuiInput_InstallUninstall(InputEvent @event)
     {
-        if (@event is InputEventMouseButton iemb && iemb.Pressed && iemb.ButtonIndex == (int)ButtonList.Left)
+        if (@event is InputEventMouseButton iemb && iemb.Pressed && iemb.ButtonIndex == MouseButton.Left)
         {
             Installed = !Installed;
             EmitSignal("install_clicked", Installed);

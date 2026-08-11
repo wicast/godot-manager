@@ -4,7 +4,7 @@ using Godot;
 using Godot.Collections;
 using Uri = System.Uri;
 
-public class ImageDownloader : Object {
+public partial class ImageDownloader   : GodotObject {
 	GDCSHTTPClient client;
 
 	public Task ActiveTask { get; set; }
@@ -44,7 +44,7 @@ public class ImageDownloader : Object {
 		else
 			client.ClearProxy();
 		
-		Task<HTTPClient.Status> cres = client.StartClient(uUri.Host, uUri.Port, (uUri.Scheme == "https"));
+		Task<GDCSHTTPClient.Status> cres = client.StartClient(uUri.Host, uUri.Port, (uUri.Scheme == "https"));
 
 		while (!cres.IsCompleted)
 			await this.IdleFrame();
@@ -62,10 +62,10 @@ public class ImageDownloader : Object {
 		
 		if (redirect_codes.IndexOf(result.ResponseCode) >= 0) {
 			bIsRedirected = true;
-			if (result.Headers.Contains("Location"))
-				sRedirected = result.Headers["Location"] as string;
-			else if (result.Headers.Contains("location"))
-				sRedirected = result.Headers["location"] as string;
+			if (result.Headers.ContainsKey("Location"))
+				sRedirected = (string)result.Headers["Location"];
+			else if (result.Headers.ContainsKey("location"))
+				sRedirected = (string)result.Headers["location"];
 			else
 				GD.Print($"Fatal Error, Location header field not found.");
 			Task<bool> recurse = StartDownload();
@@ -78,13 +78,12 @@ public class ImageDownloader : Object {
 			return false;
 		}
 
-		File fh = new File();
-		Error err = fh.Open(sOutPath, File.ModeFlags.Write);
-		if (err == Error.Ok) {
-			fh.StoreBuffer(result.BodyRaw);
-			fh.Close();
-		} else {
-			GD.Print($"Failed to open file {sOutPath}, Error: {err}");
+		if (result == null || result.BodyRaw == null)
+			return false;
+		try {
+			System.IO.File.WriteAllBytes(sOutPath, result.BodyRaw);
+		} catch (System.Exception ex) {
+			GD.Print($"Failed to write file {sOutPath}, Error: {ex.Message}");
 			return false;
 		}
 

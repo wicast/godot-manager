@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using DateTime = System.DateTime;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class UpdateCheck : Object
+public partial class UpdateCheck   : GodotObject
 {
 	[JsonProperty] public DateTime LastCheck { get; set; }
 }

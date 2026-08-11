@@ -5,7 +5,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace Mirrors {
 
-	public class DefaultSettings {
+	public partial class DefaultSettings   {
 		public static DefaultContractResolver contractResolver = new DefaultContractResolver {
 			NamingStrategy = new CamelCaseNamingStrategy()
 		};

@@ -6,12 +6,12 @@ using Newtonsoft.Json;
 using DateTimeOffset = System.DateTimeOffset;
 
 namespace Github {
-	public class Github : Node {
+	public partial class Github   : Node {
 		[Signal]
-		public delegate void chunk_received(int size);
+		public delegate void chunk_receivedEventHandler(int size);
 
 		[Signal]
-		public delegate void request_completed();
+		public delegate void request_completedEventHandler();
 
 #region Singleton Instance
 		private static Github _instance;
@@ -41,10 +41,10 @@ namespace Github {
 		}
 
 		private void UpdateLimit(HTTPResponse response) {
-			Limit.Limit = (response.Headers["X-RateLimit-Limit"] as string).ToInt();
-			Limit.Remaining = (response.Headers["X-RateLimit-Remaining"] as string).ToInt();
-			Limit.Reset = DateTimeOffset.FromUnixTimeSeconds((response.Headers["X-RateLimit-Reset"] as string).ToInt()).DateTime;
-			Limit.Used = (response.Headers["X-RateLimit-Used"] as string).ToInt();
+			Limit.Limit = ((string)response.Headers["X-RateLimit-Limit"]).ToInt();
+			Limit.Remaining = ((string)response.Headers["X-RateLimit-Remaining"]).ToInt();
+			Limit.Reset = DateTimeOffset.FromUnixTimeSeconds(((string)response.Headers["X-RateLimit-Reset"]).ToInt()).DateTime;
+			Limit.Used = ((string)response.Headers["X-RateLimit-Used"]).ToInt();
 		}
 
 		public async Task<Release> GetLatestRelease() {
@@ -53,8 +53,7 @@ namespace Github {
 			if (CentralStore.Settings.UseProxy)
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else
-				client.ClearProxy();
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
+				client.ClearProxy();			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
 
 			while (!cres.IsCompleted) {
 				await this.IdleFrame();
@@ -72,7 +71,7 @@ namespace Github {
 			Mutex mutex = new Mutex();
 			mutex.Lock();
 			HTTPResponse result = tresult.Result;
-			
+
 			client.Close();
 			
 			UpdateLimit(result);
@@ -94,7 +93,7 @@ namespace Github {
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else
 				client.ClearProxy();
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
 
 			while (!cres.IsCompleted) {
 				await this.IdleFrame();
@@ -134,7 +133,7 @@ namespace Github {
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else
 				client.ClearProxy();
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port ,true);
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port ,true);
 			
 			while (!cres.IsCompleted) {
 				await this.IdleFrame();

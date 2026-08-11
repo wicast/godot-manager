@@ -4,7 +4,7 @@ using DateTime = System.DateTime;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class MirrorSite : Object
+public partial class MirrorSite   : GodotObject
 {
 	[JsonProperty] public int Id { get; set; } = 0;
 	[JsonProperty] public string Name { get; set; } = string.Empty;

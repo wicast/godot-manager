@@ -7,11 +7,11 @@ using System.Text.RegularExpressions;
 using System;
 
 
-public class EditProject : ReferenceRect
+public partial class EditProject   : ReferenceRect
 {
     #region Signals
     [Signal]
-    public delegate void project_updated();
+    public delegate void project_updatedEventHandler();
     #endregion
 
     #region Node Paths
@@ -50,7 +50,7 @@ public class EditProject : ReferenceRect
 
     #region Resources
     [Resource("res://components/AddonLineEntry.tscn")] private PackedScene ALineEntry = null;
-    [Resource("res://Assets/Icons/default_project_icon.png")] private Texture DefaultIcon = null;
+    [Resource("res://Assets/Icons/default_project_icon.png")] private Texture2D DefaultIcon = null;
     #endregion
 
     #region Private Variables
@@ -134,7 +134,7 @@ public class EditProject : ReferenceRect
             string imgLoc =
                 $"{CentralStore.Settings.CachePath}/images/{plgn.Asset.AssetId}{plgn.Asset.IconUrl.GetExtension()}"
                     .NormalizePath();
-            AddonLineEntry ale = ALineEntry.Instance<AddonLineEntry>();
+            AddonLineEntry ale = ALineEntry.Instantiate<AddonLineEntry>();
 
             ale.Icon = Util.LoadImage(imgLoc);
             if (ale.Icon == null) ale.Icon = DefaultIcon;
@@ -143,7 +143,7 @@ public class EditProject : ReferenceRect
             ale.Version = plgn.Asset.VersionString;
             ale.SetMeta("asset", plgn);
             _PluginList.AddChild(ale);
-            ale.Connect("install_clicked", this, "OnToggledPlugin");
+            ale.Connect("install_clicked", Callable.From<bool>(OnToggledPlugin));
         }
 
         ProjectFile = pf;
@@ -346,12 +346,10 @@ public class EditProject : ReferenceRect
     {
         if (inputEvent is InputEventMouseButton iemb)
         {
-            if (iemb.Pressed && iemb.ButtonIndex == (int)ButtonList.Left)
+            if (iemb.Pressed && iemb.ButtonIndex == MouseButton.Left)
             {
-                AppDialogs.ImageFileDialog.Connect("file_selected", this, "OnFileSelected", null,
-                    (int)ConnectFlags.Oneshot);
-                AppDialogs.ImageFileDialog.Connect("popup_hide", this, "OnFilePopupHide", null,
-                    (uint)ConnectFlags.Oneshot);
+                AppDialogs.ImageFileDialog.Connect("file_selected", Callable.From<string>(OnFileSelected), (uint)ConnectFlags.OneShot);
+                AppDialogs.ImageFileDialog.Connect("popup_hide", Callable.From(OnFilePopupHide), (uint)ConnectFlags.OneShot);
                 AppDialogs.ImageFileDialog.CurrentDir = ProjectFile.Location.GetBaseDir();
                 AppDialogs.ImageFileDialog.PopupCentered();
             }
@@ -372,7 +370,7 @@ public class EditProject : ReferenceRect
             await ret;
             if (ret.Result)
             {
-                SFile.Copy(path, pfpath.PlusFile(path.GetFile()));
+                SFile.Copy(path, System.IO.Path.Join(pfpath, path.GetFile()));
                 IconPath = pfpath.GetProjectRoot(path);
             }
             else
@@ -391,7 +389,7 @@ public class EditProject : ReferenceRect
 
     void OnFilePopupHide()
     {
-        AppDialogs.ImageFileDialog.Disconnect("file_selected", this, "OnFileSelected");
+        AppDialogs.ImageFileDialog.Disconnect("file_selected", Callable.From<string>(OnFileSelected));
     }
 
     [SignalHandler("text_changed", nameof(_ProjectName))]
@@ -405,7 +403,7 @@ public class EditProject : ReferenceRect
     [SignalHandler("item_selected", nameof(_GodotVersion))]
     void OnGodotVersionItemSelected(int index)
     {
-        GodotVersion = _GodotVersion.GetItemMetadata(index) as string;
+        GodotVersion = _GodotVersion.GetItemMetadata(index).AsString();
         _isDirty = true;
         _SaveBtn.Disabled = false;
     }

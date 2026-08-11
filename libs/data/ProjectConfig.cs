@@ -3,7 +3,7 @@ using Godot.Collections;
 using StreamReader = System.IO.StreamReader;
 using StreamWriter = System.IO.StreamWriter;
 
-public class ProjectConfig : Object {
+public partial class ProjectConfig   : GodotObject {
 	string buffer;
 
 	const string HEADER = @"; Engine configuration file.
@@ -33,7 +33,7 @@ public class ProjectConfig : Object {
 		string retval = defval;
 		if (HasSection(section) && HasSectionKey(section,key)) {
 			retval = this[section,key];
-			if (retval.BeginsWith("\"") && retval.EndsWith("\""))
+			if (retval.StartsWith("\"") && retval.EndsWith("\""))
 				retval = retval.Substring(1,retval.Length-2);
 		}
 		return retval;
@@ -68,10 +68,10 @@ public class ProjectConfig : Object {
 		foreach (var data in buffer.Split("\n",true)) {
 			var line = data.StripEdges();
 
-			if (line.BeginsWith(";"))
+			if (line.StartsWith(";"))
 				continue;
 			
-			if (line.BeginsWith("[")) {
+			if (line.StartsWith("[")) {
 				current_section = line.Substring(1,line.Length-2);
 				sections[current_section] = new Dictionary<string, string>();
 				continue;
@@ -108,11 +108,11 @@ public class ProjectConfig : Object {
 				var line = data.StripEdges();
 				
 				// Handle Comments
-				if (line.BeginsWith(";"))
+				if (line.StartsWith(";"))
 					continue;
 				
 				// Handle Section Definition
-				if (line.BeginsWith("[")) {
+				if (line.StartsWith("[")) {
 					current_section = line.Substring(1,line.Length - 2);
 					sections[current_section] = new Dictionary<string, string>();
 					continue;
@@ -171,23 +171,20 @@ public class ProjectConfig : Object {
 		if (fname != "")
 			fileName = fname;
 		
-		using (File fh = new File()) {
-			Error ret = fh.Open(fileName, File.ModeFlags.Read);
-			if (ret == Error.Ok) {
-				buffer = fh.GetAsText();
-			} else {
-				return ret;
-			}
-			fh.Close();
+		var fh = FileAccess.Open(fileName, FileAccess.ModeFlags.Read);
+		if (fh == null) {
+			return Error.FileNotFound;
 		}
+		buffer = fh.GetAsText();
+		fh.Close();
 		sections["header"] = new Dictionary<string, string>();
 		string current_section = "header";
 		string last_key = "";
 		foreach(string line in buffer.Split("\n")) {
 			var nline = line.StripEdges();
-			if (nline.BeginsWith(";")) // Comment, ignore.
+			if (nline.StartsWith(";")) // Comment, ignore.
 				continue;
-			if (nline.BeginsWith("[")) { // Section Header
+			if (nline.StartsWith("[")) { // Section Header
 				current_section = nline.Substring(1,nline.Length-2);
 				sections[current_section] = new Dictionary<string, string>();
 				continue;
@@ -211,33 +208,30 @@ public class ProjectConfig : Object {
 		if (fname != "")
 			fileName = fname;
 
-		using (File fh = new File()) {
-			Error ret = fh.Open(fileName, File.ModeFlags.Write);
-			if (ret != Error.Ok) {
-				return ret;
-			}
-			fh.StoreBuffer(HEADER.ToUTF8());
+		var fh = FileAccess.Open(fileName, FileAccess.ModeFlags.Write);
+		if (fh == null) {
+			return Error.FileCantWrite;
+		}			fh.StoreBuffer(System.Text.Encoding.UTF8.GetBytes(HEADER));
 
-			foreach(string key in sections["header"].Keys) {
-				fh.StoreLine($"{key}={sections["header"][key]}");
-			}
-
-			fh.StoreLine(" ");
-
-			foreach(string section in sections.Keys) {
-				if (section == "header")
-					continue;
-				
-				fh.StoreLine($"[{section}]");
-				fh.StoreLine(" ");
-				foreach(string key in sections[section].Keys) {
-					fh.StoreLine($"{key}={sections[section][key]}");
-				}
-				fh.StoreLine(" ");
-			}
-
-			fh.Close();
+		foreach(string key in sections["header"].Keys) {
+			fh.StoreLine($"{key}={sections["header"][key]}");
 		}
+
+		fh.StoreLine(" ");
+
+		foreach(string section in sections.Keys) {
+			if (section == "header")
+				continue;
+			
+			fh.StoreLine($"[{section}]");
+			fh.StoreLine(" ");
+			foreach(string key in sections[section].Keys) {
+				fh.StoreLine($"{key}={sections[section][key]}");
+			}
+			fh.StoreLine(" ");
+		}
+
+		fh.Close();
 		return Error.Ok;
 	}
 }

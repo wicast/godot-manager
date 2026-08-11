@@ -10,25 +10,25 @@ using Uri = System.Uri;
 using Guid = System.Guid;
 using Environment = System.Environment;
 
-public class GodotLineEntry : HBoxContainer
+public partial class GodotLineEntry   : HBoxContainer
 {
     [Signal]
-    public delegate void install_clicked(GodotLineEntry entry);
+    public delegate void install_clickedEventHandler(GodotLineEntry entry);
 
     [Signal]
-    public delegate void uninstall_clicked(GodotLineEntry entry);
+    public delegate void uninstall_clickedEventHandler(GodotLineEntry entry);
 
     [Signal]
-    public delegate void default_selected(GodotLineEntry entry);
+    public delegate void default_selectedEventHandler(GodotLineEntry entry);
 
     [Signal]
-    public delegate void right_clicked(GodotLineEntry entry);
+    public delegate void right_clickedEventHandler(GodotLineEntry entry);
 
     [Signal]
-    public delegate void settings_shared_clicked(GodotLineEntry entry);
+    public delegate void settings_shared_clickedEventHandler(GodotLineEntry entry);
 
     [Signal]
-    public delegate void link_settings_clicked(GodotLineEntry entry);
+    public delegate void link_settings_clickedEventHandler(GodotLineEntry entry);
 
 #region Private Node Variables
     [NodePath("vc/VersionTag")]
@@ -68,8 +68,8 @@ public class GodotLineEntry : HBoxContainer
     [NodePath("DownloadSpeedTimer")]
     private Timer _downloadSpeedTimer = null;
 
-    private StreamTexture downloadIcon;
-    private StreamTexture uninstallIcon;
+    private Texture2D downloadIcon;
+    private Texture2D uninstallIcon;
 #endregion
 
 #region Private String Variables
@@ -337,8 +337,8 @@ public class GodotLineEntry : HBoxContainer
         SettingsShared = bSettingsShare;
         SettingsLinked = bSettingsLinked;
 
-        downloadIcon = GD.Load<StreamTexture>("res://Assets/Icons/download.svg");
-        uninstallIcon = GD.Load<StreamTexture>("res://Assets/Icons/uninstall.svg");
+        downloadIcon = GD.Load<Texture2D>("res://Assets/Icons/download.svg");
+        uninstallIcon = GD.Load<Texture2D>("res://Assets/Icons/uninstall.svg");
         Downloaded = bDownloaded;
         ToggleDefault(bDefault);
         adSpeedStack = new Array<double>();
@@ -408,7 +408,7 @@ public class GodotLineEntry : HBoxContainer
     void OnGuiInput(InputEvent inputEvent)
     {
         if (inputEvent is InputEventMouseButton iemb && iemb.Pressed &&
-            (ButtonList)iemb.ButtonIndex == ButtonList.Right)
+            (MouseButton)iemb.ButtonIndex == MouseButton.Right)
         {
             EmitSignal("right_clicked", this);
         }
@@ -416,7 +416,7 @@ public class GodotLineEntry : HBoxContainer
 
     [SignalHandler("gui_input", nameof(_download))]
     void OnDownload_GuiInput(InputEvent inputEvent) {
-        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (ButtonList)iemb.ButtonIndex == ButtonList.Left) {
+        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (MouseButton)iemb.ButtonIndex == MouseButton.Left) {
             if (_download.Texture == downloadIcon)
                 EmitSignal("install_clicked", this);
             else
@@ -427,7 +427,7 @@ public class GodotLineEntry : HBoxContainer
 
     [SignalHandler("gui_input", nameof(_default))]
     void OnDefault_GuiInput(InputEvent inputEvent) {
-        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (ButtonList)iemb.ButtonIndex == ButtonList.Left) {
+        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (MouseButton)iemb.ButtonIndex == MouseButton.Left) {
             EmitSignal("default_selected", this);
         }
     }
@@ -435,7 +435,7 @@ public class GodotLineEntry : HBoxContainer
     [SignalHandler("gui_input", nameof(_linked))]
     void OnLinked_GuiInput(InputEvent inputEvent)
     {
-        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (ButtonList)iemb.ButtonIndex == ButtonList.Left)
+        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (MouseButton)iemb.ButtonIndex == MouseButton.Left)
         {
             EmitSignal("link_settings_clicked", this);
         }
@@ -444,7 +444,7 @@ public class GodotLineEntry : HBoxContainer
     [SignalHandler("gui_input", nameof(_settingsShare))]
     void OnSettingsShare_GuiInput(InputEvent inputEvent)
     {
-        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (ButtonList)iemb.ButtonIndex == ButtonList.Left)
+        if (inputEvent is InputEventMouseButton iemb && iemb.Pressed && (MouseButton)iemb.ButtonIndex == MouseButton.Left)
         {
             EmitSignal("settings_shared_clicked", this);
         }

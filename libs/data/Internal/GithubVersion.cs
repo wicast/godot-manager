@@ -3,10 +3,10 @@ using Godot;
 using Godot.Collections;
 using Newtonsoft.Json;
 using System.Linq;
-using Object = Godot.Object;
+using Object = Godot.GodotObject;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GithubVersion : Object
+public partial class GithubVersion   : Object
 {
 	[JsonProperty] public string Name;	// Github.Release.Name
 	[JsonProperty] public string Page;	// Github.Release.HtmlUrl

@@ -6,11 +6,11 @@ using Newtonsoft.Json;
 using DateTimeOffset = System.DateTimeOffset;
 
 namespace Mirrors {
-	public class MirrorManager : Node {
+	public partial class MirrorManager   : Node {
 
 #region Signals
-		[Signal] public delegate void chunk_received(int size);
-		[Signal] public delegate void request_completed();
+		[Signal] public delegate void chunk_receivedEventHandler(int size);
+		[Signal] public delegate void request_completedEventHandler();
 #endregion
 
 #region Singleton Instance
@@ -39,7 +39,7 @@ namespace Mirrors {
 			else
 				client.ClearProxy();
 			
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
 
 			while (!cres.IsCompleted)
 				await this.IdleFrame();
@@ -75,7 +75,7 @@ namespace Mirrors {
 			else
 				client.ClearProxy();
 			
-			Task<HTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
+			Task<GDCSHTTPClient.Status> cres = client.StartClient(uri.Host, uri.Port, true);
 
 			while (!cres.IsCompleted)
 				await this.IdleFrame();

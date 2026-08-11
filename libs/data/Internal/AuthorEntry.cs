@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace GodotManager.libs.data.Internal
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class AuthorEntry : Object
+    public partial class AuthorEntry   : GodotObject
     {
         [JsonProperty] public string Name { get; set; }
         [JsonProperty] public string AvatarUrl { get; set; }

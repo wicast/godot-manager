@@ -3,11 +3,11 @@ using Godot.Collections;
 using Godot.Sharp.Extras;
 
 
-public class CreateCategory : ReferenceRect
+public partial class CreateCategory   : ReferenceRect
 {
 #region Signals
     [Signal]
-    public delegate void update_categories();
+    public delegate void update_categoriesEventHandler();
 #endregion
 
 #region Node Paths

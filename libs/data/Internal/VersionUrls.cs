@@ -2,7 +2,7 @@ using Godot;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class VersionUrls : Object
+public partial class VersionUrls   : GodotObject
 {
 
 	[JsonProperty] public string Win32; // Github.Release.Assets[indx].Name.FindN("[mono_]win32")

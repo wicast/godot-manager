@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using DateTime = System.DateTime;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Category : Object {
+public partial class Category   : GodotObject {
 	[JsonProperty] public int Id;
 	[JsonProperty] public string Name;
 	[JsonProperty] public bool IsExpanded;

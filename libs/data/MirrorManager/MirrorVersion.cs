@@ -4,7 +4,7 @@ using FPath = System.IO.Path;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class MirrorVersion : Object
+public partial class MirrorVersion   : GodotObject
 {
 	[JsonProperty] public int Id { get; set; } = 0;
 	[JsonProperty] public int MirrorId { get; set; } = 0;

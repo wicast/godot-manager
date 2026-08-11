@@ -8,7 +8,7 @@ using InvalidOperationException = System.InvalidOperationException;
 using Dir = System.IO.Directory;
 using SFile = System.IO.File;
 
-public class UpdateWindow : Control
+public partial class UpdateWindow   : Control
 {
 
     [NodePath("bg/cc/vb/Label")]

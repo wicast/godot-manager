@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Godot;
 using Godot.Sharp.Extras;
 
-public class YesNoDialog : ReferenceRect
+public partial class YesNoDialog   : ReferenceRect
 {
     
     [NodePath("PC/CC/P/VB/MCContent/VC/Title")]

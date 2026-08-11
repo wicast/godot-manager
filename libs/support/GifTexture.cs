@@ -1,17 +1,18 @@
 using System.IO;
+using Godot;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Gif;
+using SImage = SixLabors.ImageSharp.Image;
 
-public class GifTexture : Godot.ImageTexture {
-	public GifTexture(string file) {
-		Image gif = Image.Load(file.GetOSDir());
-		using(MemoryStream ms = new MemoryStream()) {
-			Image iframe = gif.Frames.CloneFrame(0);
+public static partial class GifTexture   {
+	public static Texture2D Load(string file) {
+		SImage gif = SImage.Load(file.GetOSDir());
+		using (MemoryStream ms = new MemoryStream()) {
+			SImage iframe = gif.Frames.CloneFrame(0);
 			iframe.SaveAsPng(ms);
 			ms.Position = 0;
 			Godot.Image img = new Godot.Image();
 			img.LoadPngFromBuffer(ms.ToArray());
-			CreateFromImage(img);
+			return ImageTexture.CreateFromImage(img);
 		}
 	}
 }

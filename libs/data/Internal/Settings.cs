@@ -6,7 +6,7 @@ using TimeSpan = System.TimeSpan;
 using Guid = System.Guid;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Settings : Object {
+public partial class Settings   : GodotObject {
 	[JsonProperty] public string ProjectPath;
 	[JsonProperty] public string DefaultEngine;
 	[JsonProperty] public string EnginePath;

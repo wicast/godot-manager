@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class Titlebar : Control
+public partial class Titlebar   : Control
 {
     private bool moving = false;
     private bool following = false;
@@ -14,7 +14,7 @@ public class Titlebar : Control
     [SignalHandler("gui_input")]
     void OnTitlebar_GuiInput(InputEvent inputEvent) {
         if (inputEvent is InputEventMouseButton iemb) {
-            if (iemb.ButtonIndex == 1) {
+            if (iemb.ButtonIndex == MouseButton.Left) {
                 following = !following;
                 start_pos = GetLocalMousePosition();
                 return;
@@ -25,7 +25,7 @@ public class Titlebar : Control
             var movement = GetLocalMousePosition() - start_pos;
             if (movement == Vector2.Zero) return;
             moving = true;
-            OS.WindowPosition += movement;
+            GetWindow().Position += (Vector2I)movement;
             moving = false;
         }
     }

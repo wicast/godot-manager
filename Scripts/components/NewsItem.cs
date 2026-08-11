@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Sharp.Extras;
 
-public class NewsItem : Panel
+public partial class NewsItem   : Panel
 {
     [NodePath("vb/Headline")] private Label _headline;
     [NodePath("vb/hbby/Avatar")] private TextureRect _avatar;
@@ -33,7 +33,7 @@ public class NewsItem : Panel
         set
         {
             _sAvatar = value;
-            if (_avatar == null || value == null || value.Empty()) return;
+            if (_avatar == null || string.IsNullOrEmpty(value)) return;
             var img = Util.LoadImage(_sAvatar);
             _avatar.Texture = img;
         }
@@ -55,7 +55,7 @@ public class NewsItem : Panel
         set
         {
             _sImage = value;
-            if (_image == null || value == null || value.Empty()) return;
+            if (_image == null || string.IsNullOrEmpty(value)) return;
             var img = Util.LoadImage(_sImage);
             _image.Texture = img;
         }
@@ -68,7 +68,7 @@ public class NewsItem : Panel
         {
             _sBlerb = value;
             if (_blerb != null)
-                _blerb.BbcodeText = value;
+                _blerb.Text = value;
         }
     }
 
@@ -91,7 +91,7 @@ public class NewsItem : Panel
         if (!(@event is InputEventMouseButton iemb))
             return;
 
-        if (iemb.ButtonIndex == 1 && iemb.Pressed)
+        if (iemb.ButtonIndex == MouseButton.Left && iemb.Pressed)
         {
             OS.ShellOpen(Url);
         }

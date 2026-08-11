@@ -1,8 +1,9 @@
 using Godot;
 using System;
 using Godot.Sharp.Extras;
+using Thread = System.Threading.Thread;
 
-public class SplashScreen : Control
+public partial class SplashScreen   : Control
 {
 	[NodePath] private Label VersionInfo = null;
 	private Thread _thread;
@@ -13,43 +14,42 @@ public class SplashScreen : Control
 		this.OnReady();
 		VersionInfo.Text = $"Version {VERSION.GodotManager}";
 		var timer = GetTree().CreateTimer(0.4f);
-		timer.Connect("timeout", this, "OnTimeout_LoadResources");
+		timer.Connect("timeout", Callable.From(OnTimeout_LoadResources));
 	}
 
 	void OnTimeout_LoadResources()
 	{
-		_thread = new Thread();
-		_thread.Start(this, "GDThread_Loader");
+		_thread = new Thread(GDThread_Loader);
+		_thread.Start();
 	}
 
 	void GDThread_Loader()
 	{
-		var loader = ResourceLoader.LoadInteractive("res://Scenes/SceneManager.tscn");
-		GdAssert.Assert(loader != null, "Loader failed to start loading SceneManager");
-		if (loader is null) return;
-
-		do
+		const string scenePath = "res://Scenes/SceneManager.tscn";
+		ResourceLoader.LoadThreadedRequest(scenePath);
+		while (true)
 		{
-			OS.DelayMsec(100);
-			var err = loader.Poll();
-			if (err == Error.FileEof)
+			Thread.Sleep(100);
+			var status = ResourceLoader.LoadThreadedGetStatus(scenePath);
+			if (status == ResourceLoader.ThreadLoadStatus.Loaded)
 			{
-				var res = (PackedScene)loader.GetResource();
+				var res = (PackedScene)ResourceLoader.LoadThreadedGet(scenePath);
 				CallDeferred("ThreadDone", res);
 				break;
-			} else if (err != Error.Ok)
+			}
+			else if (status == ResourceLoader.ThreadLoadStatus.Failed || status == ResourceLoader.ThreadLoadStatus.InvalidResource)
 			{
 				GD.PrintErr("There was an error loading.");
 				break;
 			}
-		} while (true);
+		}
 	}
 
 	void ThreadDone(PackedScene res)
 	{
-		_thread.WaitToFinish();
+		_thread.Join();
 
-		var inst = res.Instance<SceneManager>();
+		var inst = res.Instantiate<SceneManager>();
 		GetTree().CurrentScene.QueueFree();
 		GetTree().CurrentScene = null;
 		GetTree().Root.AddChild(inst);

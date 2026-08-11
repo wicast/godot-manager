@@ -6,7 +6,7 @@ using SFile = System.IO.File;
 using System;
 using System.Linq;
 
-public class MainWindow : Control
+public partial class MainWindow   : Control
 {
 	[NodePath("bg/Shell/Sidebar")]
 	ColorRect _sidebar = null;
@@ -42,13 +42,16 @@ public class MainWindow : Control
 				pb.Activate();
 			else
 				pb.Deactivate();
-			pb.Connect("Clicked", this, "OnPageButton_Clicked");
+			pb.Connect("Clicked", Callable.From<PageButton>(OnPageButton_Clicked));
 		}
-		Texture appTex = GD.Load<Texture>("res://godot-manager.png");
-		Image appIcon = (Image)appTex.GetData();
-		OS.SetIcon(appIcon);
+		if (DisplayServer.HasFeature(DisplayServer.Feature.Icon))
+		{
+			Texture2D appTex = GD.Load<Texture2D>("res://godot-manager.png");
+			Image appIcon = appTex.GetImage();
+			DisplayServer.SetIcon(appIcon);
+		}
 		AppDialogs dlgs = AppDialogs.Instance;
-		dlgs.SetAnchorsAndMarginsPreset(LayoutPreset.Wide);
+		dlgs.SetAnchorsPreset(LayoutPreset.FullRect);
 		dlgs.Name = "AppDialogs";
 		AddChild(dlgs);
 
@@ -56,13 +59,13 @@ public class MainWindow : Control
 
 		if (CentralStore.Settings.UseSystemTitlebar)
 		{
-			OS.WindowBorderless = false;
+			GetWindow().Borderless = false;
 			GetTree().Root.GetNode<Titlebar>("SceneManager/MainWindow/bg/Shell/VC/TitleBar").Visible = false;
 			GetTree().Root.GetNode<Control>("SceneManager/MainWindow/bg/Shell/VC/VisibleSpacer").Visible = true;
 		}
 		else
 		{
-			OS.WindowBorderless = true;
+			GetWindow().Borderless = true;
 			GetTree().Root.GetNode<Titlebar>("SceneManager/MainWindow/bg/Shell/VC/TitleBar").Visible = true;
 			GetTree().Root.GetNode<Control>("SceneManager/MainWindow/bg/Shell/VC/VisibleSpacer").Visible = false;
 		}
@@ -70,7 +73,7 @@ public class MainWindow : Control
 		if (CentralStore.Settings.FirstTimeRun)
 		{
 			AppDialogs.FirstRunWizard.ShowDialog();
-			AppDialogs.FirstRunWizard.Connect("wizard_completed", this, "OnFirstRunWizard_Completed", null, (int)ConnectFlags.Oneshot);
+			AppDialogs.FirstRunWizard.Connect("wizard_completed", Callable.From(OnFirstRunWizard_Completed), (uint)ConnectFlags.OneShot);
 			//AppDialogs.FirstTimeInstall.Visible = true;
 		}
 		else

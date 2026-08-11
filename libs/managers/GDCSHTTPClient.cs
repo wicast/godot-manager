@@ -1,25 +1,55 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Godot;
+using Godot.Collections;
+using HttpClient = System.Net.Http.HttpClient;
+using HttpMethod = System.Net.Http.HttpMethod;
 
-public class GDCSHTTPClient : Node {
+public partial class GDCSHTTPClient   : Node {
 	[Signal]
-	public delegate void chunk_received(int size);
+	public delegate void chunk_receivedEventHandler(int size);
 
 	[Signal]
-	public delegate void headers_received(Godot.Collections.Dictionary headers);
+	public delegate void headers_receivedEventHandler(Godot.Collections.Dictionary headers);
 
 	[Signal]
-	public delegate void request_completed();
+	public delegate void request_completedEventHandler();
 
-	private HTTPClient client = null;
+	// Godot 4 removed the HTTPClient class, so this enum replaces GDCSHTTPClient.Status.
+	public enum Status {
+		Connected,
+		CantResolve,
+		CantConnect,
+		ConnectionError,
+		SslHandshakeError,
+		Requesting,
+		Body
+	}
+
+	private HttpClient client;
 	private HTTPResponse lastResponse;
 	private string sHost;
 	private string sProperName;
 	private bool bUseSSL;
 	private bool bCancelled;
 
+	private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(10);
+
 	public GDCSHTTPClient() {
-		client = new HTTPClient();
+		client = CreateHttpClient();
+	}
+
+	private static HttpClient CreateHttpClient() {
+		var handler = new HttpClientHandler() {
+			AllowAutoRedirect = false,
+			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+		};
+		var httpClient = new HttpClient(handler);
+		httpClient.Timeout = RequestTimeout;
+		return httpClient;
 	}
 
 	public HTTPResponse LastResponse {
@@ -32,16 +62,27 @@ public class GDCSHTTPClient : Node {
 		return $"User-Agent: Godot-Manager/{VERSION.GodotManager}-{VERSION.Channel} ({Platform.OperatingSystem})";
 	}
 
-	private string[] GetRequestHeaders() {
-		return new string[] {
-			//"Accept: application/vnd.github.v3+json",
-			"Accept: */*",
-			GetUserAgent()
-		};
+	private void ApplyDefaultHeaders(HttpRequestMessage request) {
+		request.Headers.TryAddWithoutValidation("Accept", "*/*");
+		request.Headers.TryAddWithoutValidation("User-Agent", GetUserAgent());
+	}
+
+	private string BuildUrl(string path) {
+		string scheme = bUseSSL ? "https" : "http";
+		return $"{scheme}://{sHost}{path}";
+	}
+
+	private static Godot.Collections.Dictionary BuildHeaders(HttpResponseMessage response) {
+		var headers = new Godot.Collections.Dictionary();
+		foreach (var h in response.Headers)
+			headers[h.Key] = string.Join(", ", h.Value);
+		foreach (var h in response.Content.Headers)
+			headers[h.Key] = string.Join(", ", h.Value);
+		return headers;
 	}
 
 	public void Close() {
-		client.Close();
+		// System.Net.Http.HttpClient uses pooled connections; nothing to close explicitly.
 	}
 
 	public void Cancel() {
@@ -50,20 +91,27 @@ public class GDCSHTTPClient : Node {
 	public bool IsCancelled() => bCancelled;
 
 	public void SetProxy(string host, int port, bool ssl = false) {
-		if (ssl)
-			client.SetHttpsProxy(host, port);
-		else
-			client.SetHttpProxy(host, port);
+		var handler = new HttpClientHandler() {
+			AllowAutoRedirect = false,
+			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+			UseProxy = true,
+			Proxy = new WebProxy(host, port)
+		};
+		client = new HttpClient(handler);
+		client.Timeout = RequestTimeout;
 	}
 
 	public void ClearProxy() {
-		client.SetHttpsProxy("",0);
-		client.SetHttpProxy("",0);
+		client = CreateHttpClient();
 	}
 
-	public async Task<HTTPClient.Status> StartClient(string host, bool use_ssl = false) {
-		client.BlockingModeEnabled = false;
+	public async Task<Status> StartClient(string host, bool use_ssl = false) {
+		return await StartClient(host, use_ssl ? 443 : 80, use_ssl);
+	}
+
+	public async Task<Status> StartClient(string host, int port, bool use_ssl = false) {
 		sHost = host;
+		bUseSSL = use_ssl;
 		var split = sHost.Split('.');
 		if (split.Length == 2) {
 			sProperName = split[0].Capitalize();
@@ -73,127 +121,110 @@ public class GDCSHTTPClient : Node {
 			sProperName = sHost.Capitalize();
 		}
 		bCancelled = false;
-		bUseSSL = use_ssl;
-		var res = client.ConnectToHost(host,-1,use_ssl,use_ssl);
 
-		if (res != Error.Ok)
-			return HTTPClient.Status.ConnectionError;
-		
-		while (client.GetStatus() == HTTPClient.Status.Connecting ||
-				client.GetStatus() == HTTPClient.Status.Resolving)
-		{
-			client.Poll();
-			await this.IdleFrame();
+		// Pre-flight TCP connectivity check (replaces the removed HTTPClient.ConnectToHost).
+		try {
+			using (var tcp = new System.Net.Sockets.TcpClient()) {
+				await tcp.ConnectAsync(host, port);
+			}
+			return Status.Connected;
+		} catch (System.Net.Sockets.SocketException ex) {
+			GD.PrintErr(string.Format(Tr("Unable to connect to {0}:{1} ({2})"), host, port, ex.SocketErrorCode));
+			return Status.CantConnect;
+		} catch (Exception ex) {
+			GD.PrintErr(string.Format(Tr("Connection error with {0}:{1} ({2})"), host, port, ex.Message));
+			return Status.ConnectionError;
 		}
-
-		return client.GetStatus();
-	}
-
-	public async Task<HTTPClient.Status> StartClient(string host, int port, bool use_ssl = false) {
-		client.BlockingModeEnabled = false;
-		sHost = host;
-		var split = sHost.Split('.');
-		if (split.Length == 2) {
-			sProperName = split[0].Capitalize();
-		} else if (split.Length == 3) {
-			sProperName = split[1].Capitalize();
-		} else {
-			sProperName = sHost.Capitalize();
-		}
-		bCancelled = false;
-		bUseSSL = use_ssl;
-		var res = client.ConnectToHost(host,port,use_ssl, use_ssl);
-
-		if (res != Error.Ok)
-			return HTTPClient.Status.ConnectionError;
-		
-		while (client.GetStatus() == HTTPClient.Status.Connecting ||
-				client.GetStatus() == HTTPClient.Status.Resolving)
-		{
-			client.Poll();
-			await this.IdleFrame();
-		}
-
-		return client.GetStatus();
 	}
 
 	public async Task<HTTPResponse> HeadRequest(string path) {
 		HTTPResponse resp = null;
-		var res = client.Request(HTTPClient.Method.Head, path, GetRequestHeaders());
-		if (res != Error.Ok)
-			return resp;
-		
-		while (client.GetStatus() == HTTPClient.Status.Requesting) {
-			if (bCancelled) {
-				break;
-			}
-			client.Poll();
-			await this.IdleFrame();
-		}
-
 		if (bCancelled)
 			return resp;
-
-		if (client.HasResponse()) {
-			resp = new HTTPResponse();
-			resp.ResponseCode = client.GetResponseCode();
-			resp.Headers = client.GetResponseHeadersAsDictionary();
+		try {
+			using (var request = new HttpRequestMessage(HttpMethod.Head, BuildUrl(path))) {
+				ApplyDefaultHeaders(request);
+				using (var response = await client.SendAsync(request)) {
+					resp = new HTTPResponse();
+					resp.ResponseCode = (int)response.StatusCode;
+					resp.Headers = BuildHeaders(response);
+				}
+			}
+		} catch (Exception ex) {
+			GD.PrintErr($"HEAD request failed for {path}: {ex.Message}");
+			return null;
 		}
 		return resp;
 	}
 
 	public async Task<HTTPResponse> MakeRequest(string path, bool binary = false) {
 		HTTPResponse resp = null;
-		var res = client.Request(HTTPClient.Method.Get, path, GetRequestHeaders());
-		if (res != Error.Ok)
-			return null;
-		
-		while (client.GetStatus() == HTTPClient.Status.Requesting) {
-			if (bCancelled) {
-				break;
-			}
-			client.Poll();
-			await this.IdleFrame();
-		}
-
 		if (bCancelled)
 			return resp;
+		try {
+			using (var request = new HttpRequestMessage(HttpMethod.Get, BuildUrl(path))) {
+				ApplyDefaultHeaders(request);
+				using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead)) {
+					resp = new HTTPResponse();
+					resp.ResponseCode = (int)response.StatusCode;
+					resp.Headers = BuildHeaders(response);
+					EmitSignal("headers_received", resp.Headers);
 
-		if (client.HasResponse()) {
-			resp = new HTTPResponse();
-			var task = resp.FromClient(this, client, binary);
-			while (!task.IsCompleted) {
-				if (bCancelled) {
-					resp.Cancelled = bCancelled;
-					break;
+					// Stream the body, reporting progress as chunks arrive.
+					using (var stream = await response.Content.ReadAsStreamAsync())
+					using (var ms = new MemoryStream()) {
+						byte[] buffer = new byte[81920];
+						int read;
+						while ((read = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0) {
+							if (bCancelled) {
+								resp.Cancelled = true;
+								break;
+							}
+							ms.Write(buffer, 0, read);
+							EmitSignal("chunk_received", read);
+						}
+						resp.BodyRaw = ms.ToArray();
+					}
+
+					if (!binary) {
+						try {
+							resp.Body = System.Text.Encoding.UTF8.GetString(resp.BodyRaw);
+						} catch (Exception) {
+							// Body may not be a string (zip files, executables, etc.)
+						}
+					}
+					lastResponse = resp;
 				}
-				await this.IdleFrame();
 			}
-			lastResponse = resp;
+		} catch (TaskCanceledException) {
+			GD.PrintErr($"Request timed out for {path}");
+			return null;
+		} catch (HttpRequestException ex) {
+			GD.PrintErr($"Request failed for {path}: {ex.Message}");
+			return null;
+		} catch (Exception ex) {
+			GD.PrintErr($"Request error for {path}: {ex.Message}");
+			return null;
 		}
 		EmitSignal("request_completed");
 		return resp;
 	}
 
-	public bool SuccessConnect(HTTPClient.Status result, bool dialogErrors = false, bool printErrors = true) {
-		switch(result) {
-			case HTTPClient.Status.CantResolve:
-				if (printErrors) GD.PrintErr(string.Format(Tr("Unable to resolve {0}"),sHost));
-				if (dialogErrors) OS.Alert(string.Format(Tr("Unable to resolve {0}"),sHost), string.Format(Tr("{0} Failure"),sProperName));
+	public bool SuccessConnect(Status result, bool dialogErrors = false, bool printErrors = true) {
+		switch (result) {
+			case Status.CantResolve:
+				if (printErrors) GD.PrintErr(string.Format(Tr("Unable to resolve {0}"), sHost));
 				return false;
-			case HTTPClient.Status.CantConnect:
-				if (printErrors) GD.PrintErr(string.Format(Tr("Unable to resolve {0}:{1}"),sHost,bUseSSL ? 443 : 80));
-				if (dialogErrors) OS.Alert(string.Format(Tr("Unable to resolve {0}:{1}"),sHost,bUseSSL ? 443 : 80), string.Format(Tr("{0} Failure"),sProperName));
+			case Status.CantConnect:
+				if (printErrors) GD.PrintErr(string.Format(Tr("Unable to connect to {0}:{1}"), sHost, bUseSSL ? 443 : 80));
 				return false;
-			case HTTPClient.Status.ConnectionError:
-				if (printErrors) GD.PrintErr(string.Format(Tr("Connection error with {0}:{1}"),sHost,bUseSSL ? 443 : 80));
-				if (dialogErrors) OS.Alert(string.Format(Tr("Connection error with {0}:{1}"),sHost,bUseSSL ? 443 : 80), string.Format(Tr("{0} Failure"),sProperName));
+			case Status.ConnectionError:
+				if (printErrors) GD.PrintErr(string.Format(Tr("Connection error with {0}:{1}"), sHost, bUseSSL ? 443 : 80));
 				return false;
-			case HTTPClient.Status.SslHandshakeError:
-				if (printErrors) GD.PrintErr(string.Format(Tr("Failed to negotiate SSL Connection with {0}:{1}"),sHost,bUseSSL ? 443 : 80));
-				if (dialogErrors) OS.Alert(string.Format(Tr("Failed to negotiate SSL Connection with {0}:{1}"),sHost,bUseSSL ? 443 : 80), string.Format(Tr("{0} Failure"),sProperName));
+			case Status.SslHandshakeError:
+				if (printErrors) GD.PrintErr(string.Format(Tr("Failed to negotiate SSL Connection with {0}:{1}"), sHost, bUseSSL ? 443 : 80));
 				return false;
-			case HTTPClient.Status.Connected:
+			case Status.Connected:
 				return true;
 			default:
 				return false;

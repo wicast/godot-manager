@@ -3,7 +3,7 @@ using Godot.Sharp.Extras;
 using System;
 
 [Tool]
-public class HeaderButton : PanelContainer
+public partial class HeaderButton   : PanelContainer
 {
     public enum SortDirection {
         Indeterminate,
@@ -12,7 +12,7 @@ public class HeaderButton : PanelContainer
     }
 
     [Signal]
-    public delegate void direction_changed(SortDirection button);
+    public delegate void direction_changedEventHandler(SortDirection button);
 
     [Export]
     public string Title {
@@ -65,8 +65,8 @@ public class HeaderButton : PanelContainer
     private string _title;
     private SortDirection _direction;
 
-    Texture arrow = GD.Load<Texture>("res://Assets/Icons/drop_down1.svg");
-    Texture minus = GD.Load<Texture>("res://Assets/Icons/minus.svg");
+    Texture2D arrow = GD.Load<Texture2D>("res://Assets/Icons/drop_down1.svg");
+    Texture2D minus = GD.Load<Texture2D>("res://Assets/Icons/minus.svg");
 
     public override void _Ready()
     {
@@ -82,12 +82,12 @@ public class HeaderButton : PanelContainer
     [SignalHandler("gui_input")]
     void OnGuiInput_Header(InputEvent @event) {
         if (@event is InputEventMouseButton @iemb) {
-            if (@iemb.Doubleclick && @iemb.ButtonIndex == (int)ButtonList.Left) {
+            if (@iemb.DoubleClick && @iemb.ButtonIndex == MouseButton.Left) {
                 Direction = SortDirection.Indeterminate;
-                EmitSignal("direction_changed", Direction);
-            } else if (@iemb.Pressed && @iemb.ButtonIndex == (int)ButtonList.Left) {
+                EmitSignal("direction_changed", (int)Direction);
+            } else if (@iemb.Pressed && @iemb.ButtonIndex == MouseButton.Left) {
                 Direction = (Direction == SortDirection.Down) ? SortDirection.Up : SortDirection.Down;
-                EmitSignal("direction_changed", Direction);
+                EmitSignal("direction_changed", (int)Direction);
             }
         }
     }

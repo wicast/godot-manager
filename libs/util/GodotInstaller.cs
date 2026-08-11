@@ -10,11 +10,11 @@ using SDirectory = System.IO.Directory;
 using System.IO.Compression;
 using System.Threading.Tasks;
 
-public class GodotInstaller : Object {
+public partial class GodotInstaller   : GodotObject {
 
-	[Signal] public delegate void chunk_received(int size);
-	[Signal] public delegate void download_completed(GodotInstaller self);
-	[Signal] public delegate void download_failed(GodotInstaller self, HTTPClient.Status error);
+	[Signal] public delegate void chunk_receivedEventHandler(int size);
+	[Signal] public delegate void download_completedEventHandler(GodotInstaller self);
+	[Signal] public delegate void download_failedEventHandler(GodotInstaller self, GDCSHTTPClient.Status error);
 
 	GDCSHTTPClient _client = null;
 
@@ -42,8 +42,8 @@ public class GodotInstaller : Object {
 	public GodotInstaller(GodotVersion version) {
 		_version = version;
 		_client = new GDCSHTTPClient();
-		_client.Connect("chunk_received", this, "OnChunkReceived");
-		_client.Connect("headers_received", this, "OnHeadersReceived");
+		_client.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
+		_client.Connect("headers_received", Callable.From<Dictionary>(OnHeadersReceived));
 	}
 
 	public static GodotInstaller FromGithub(GithubVersion gh, bool is_mono = false) {
@@ -113,7 +113,7 @@ public class GodotInstaller : Object {
 	{
 		if (DownloadSize == 0)
 		{
-			if (headers.Contains("Transfer-Encoding")) // ContainsKey("Transfer-Encoding"))
+			if (headers.ContainsKey("Transfer-Encoding"))
 				return;
 			int size = 0;
 			if (int.TryParse((string)headers["Content-Length"], out size))
@@ -140,8 +140,8 @@ public class GodotInstaller : Object {
 		
 		var res = await _client.StartClient(dlUri.Host, dlUri.Port, dlUri.Scheme == "https");
 
-		if (res != HTTPClient.Status.Connected) {
-			EmitSignal("download_failed", this, res);
+		if (res != GDCSHTTPClient.Status.Connected) {
+			EmitSignal("download_failed", this, (int)res);
 			return null;
 		}
 
@@ -169,22 +169,12 @@ public class GodotInstaller : Object {
 		while (!resp.IsCompleted)
 			await this.IdleFrame();
 		
-		if (resp.Result == null) {
-			EmitSignal("download_failed", this, HTTPClient.Status.Requesting);
+		if (resp.Result == null || resp.Result.BodyRaw == null) {
+			EmitSignal("download_failed", this, (int)GDCSHTTPClient.Status.Body);
 			return;
 		}
 
-		Mutex mutex = new Mutex();
-		mutex.Lock();
-		File file = new File();
-		if (file.Open(_version.CacheLocation, File.ModeFlags.Write) != Error.Ok) {
-			EmitSignal("download_failed", this, HTTPClient.Status.Body);
-			return;
-		}
-
-		file.StoreBuffer(resp.Result.BodyRaw);
-		file.Close();
-		mutex.Unlock();
+		SFile.WriteAllBytes(_version.CacheLocation, resp.Result.BodyRaw);
 		EmitSignal("download_completed", this);
 	}
 
@@ -239,10 +229,7 @@ public class GodotInstaller : Object {
 
 #endif
 		if (CentralStore.Settings.SelfContainedEditors) {
-			File fh = new File();
-			fh.Open($"{_version.Location}/._sc_".GetOSDir().NormalizePath(), File.ModeFlags.Write);
-			fh.StoreString(" ");
-			fh.Close();
+			SFile.WriteAllText($"{_version.Location}/._sc_".GetOSDir().NormalizePath(), " ");
 		}
 	}
 

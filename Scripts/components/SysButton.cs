@@ -2,7 +2,7 @@ using Godot;
 using Godot.Sharp.Extras;
 
 [Tool]
-public class SysButton : ColorRect
+public partial class SysButton   : ColorRect
 {
     enum TYPES { close, maximize, minimize }
 
@@ -15,10 +15,10 @@ public class SysButton : ColorRect
     [ResolveNode(nameof(WindowMain))]
     Control WindowHandle = null;
 
-    private StreamTexture _icon = ResourceLoader.Load<StreamTexture>("res://Assets/Icons/x.svg");
+    private Texture2D _icon = ResourceLoader.Load<Texture2D>("res://Assets/Icons/x.svg");
 
     [Export]
-    StreamTexture Icon {
+    Texture2D Icon {
         get {
             return _icon;
         }
@@ -47,7 +47,7 @@ public class SysButton : ColorRect
             return;
         
         var iemb = inputEvent as InputEventMouseButton;
-        if (!iemb.Pressed && (ButtonList)iemb.ButtonIndex != ButtonList.Left)
+        if (!iemb.Pressed && (MouseButton)iemb.ButtonIndex != MouseButton.Left)
             return;
         
         switch(ButtonType) {
@@ -59,10 +59,10 @@ public class SysButton : ColorRect
                 }
                 break;
             case TYPES.minimize:
-                OS.WindowMinimized = true;
+                GetWindow().Mode = Window.ModeEnum.Minimized;
                 break;
             default:
-                OS.WindowMaximized = !OS.WindowMaximized;
+                GetWindow().Mode = (GetWindow().Mode == Window.ModeEnum.Maximized) ? Window.ModeEnum.Windowed : Window.ModeEnum.Maximized;
                 break;
         }
     }

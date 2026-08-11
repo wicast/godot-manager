@@ -3,7 +3,7 @@ using Godot.Sharp.Extras;
 using System;
 
 [Tool]
-public class PageButton : ColorRect
+public partial class PageButton   : ColorRect
 {
     [NodePath("Label")]
     private Label _label = null;
@@ -15,10 +15,10 @@ public class PageButton : ColorRect
     private ColorRect _active = null;
 
     [Signal]
-    delegate void Clicked(PageButton button);
+    delegate void ClickedEventHandler(PageButton button);
 
     private string sLabel;
-    private StreamTexture sIcon;
+    private Texture2D sIcon;
 
     private bool bActive;
 
@@ -36,7 +36,7 @@ public class PageButton : ColorRect
     }
 
     [Export]
-    public StreamTexture Icon {
+    public Texture2D Icon {
         get {
             return sIcon;
         }
@@ -80,7 +80,7 @@ public class PageButton : ColorRect
             return;
         
         var iemb = inputEvent as InputEventMouseButton;
-        if (!iemb.Pressed && (ButtonList)iemb.ButtonIndex != ButtonList.Left)
+        if (!iemb.Pressed && (MouseButton)iemb.ButtonIndex != MouseButton.Left)
             return;
 
         Activate();

@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using DateTime = System.DateTime;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class ProjectFile : Godot.Object
+public partial class ProjectFile   : GodotObject
 {
 	[JsonProperty] public string Icon;
 	[JsonProperty] public string Name;
@@ -59,11 +59,10 @@ public class ProjectFile : Godot.Object
 		bool ret = false;
 
 		var path = filePath.GetBaseDir();
-		var dir = new Directory();
-		ret = dir.DirExists(path);
+		ret = DirAccess.DirExistsAbsolute(path);
 		if (ret)
 		{
-			ret = dir.FileExists(filePath);
+			ret = FileAccess.FileExists(filePath);
 		}
 
 		return ret;

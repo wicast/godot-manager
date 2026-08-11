@@ -5,17 +5,17 @@ using System;
 using System.Linq;
 
 [Tool]
-public class CategoryList : VBoxContainer
+public partial class CategoryList   : VBoxContainer
 {
 #region Signals
     [Signal]
-    public delegate void list_toggled();
+    public delegate void list_toggledEventHandler();
 
     [Signal]
-    public delegate void pin_toggled();
+    public delegate void pin_toggledEventHandler();
 
     [Signal]
-    public delegate void drag_drop_completed(CategoryList origin, CategoryList destination, ProjectLineEntry project);
+    public delegate void drag_drop_completedEventHandler(CategoryList origin, CategoryList destination, ProjectLineEntry project);
     #endregion
 
 #region Node Variables
@@ -157,8 +157,7 @@ public class CategoryList : VBoxContainer
         if (!(inputEvent is InputEventMouseButton iemb))
             return;
         if (!iemb.Pressed)
-            return;
-        if ((ButtonList)iemb.ButtonIndex != ButtonList.Left)
+            return;		if ((MouseButton)iemb.ButtonIndex != MouseButton.Left)
             return;
         
         _toggleIcon.FlipV = !_toggleIcon.FlipV;
@@ -176,7 +175,7 @@ public class CategoryList : VBoxContainer
             return;
         if (!iemb.Pressed)
             return;
-        if ((ButtonList)iemb.ButtonIndex != ButtonList.Left)
+        if ((MouseButton)iemb.ButtonIndex != MouseButton.Left)
             return;
 
         Pinned = !Pinned;
@@ -212,7 +211,7 @@ public class CategoryList : VBoxContainer
     }
 
     public ProjectLineEntry AddProject(ProjectFile projectFile) {
-        ProjectLineEntry ple = pstProject.Instance<ProjectLineEntry>();
+        ProjectLineEntry ple = pstProject.Instantiate<ProjectLineEntry>();
         if (!ProjectFile.ProjectExists(projectFile.Location))
             ple.MissingProject = true;
         ple.ProjectFile = projectFile;
@@ -221,27 +220,27 @@ public class CategoryList : VBoxContainer
     }
 
     public void AddGodotVersion(GodotVersion godotVersion) {
-        GodotLineEntry gle = pstGodot.Instance<GodotLineEntry>();
+        GodotLineEntry gle = pstGodot.Instantiate<GodotLineEntry>();
         gle.GodotVersion = godotVersion;
         _categoryList.AddChild(gle);
     }
 
-	public override bool CanDropData(Vector2 position, object data)
+	public override bool _CanDropData(Vector2 position, Variant data)
 	{
         if ((int)GetMeta("ID") == -1)
             return false;
-        Dictionary dictData = data as Dictionary;
-		CategoryList parent = dictData["parent"] as CategoryList;
+        Dictionary dictData = data.As<Dictionary>();
+		CategoryList parent = dictData["parent"].As<CategoryList>();
         if (parent == this)
             return false;
-        return dictData["source"] is ProjectLineEntry;
+        return dictData["source"].As<ProjectLineEntry>() != null;
     }
 
-	public override void DropData(Vector2 position, object data)
+	public override void _DropData(Vector2 position, Variant data)
 	{
-		Dictionary dictData = data as Dictionary;
-        CategoryList parent = dictData["parent"] as CategoryList;
-        ProjectLineEntry ple = dictData["source"] as ProjectLineEntry;
+		Dictionary dictData = data.As<Dictionary>();
+        CategoryList parent = dictData["parent"].As<CategoryList>();
+        ProjectLineEntry ple = dictData["source"].As<ProjectLineEntry>();
         parent.List.RemoveChild(ple);
         List.AddChild(ple);
         ple.ProjectFile.CategoryId = (int)GetMeta("ID");

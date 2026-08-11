@@ -9,11 +9,11 @@ using Dir = System.IO.Directory;
 using System.Threading.Tasks;
 
 
-public class DownloadGodotManager : ReferenceRect
+public partial class DownloadGodotManager   : ReferenceRect
 {
 	#region Signals
 	[Signal]
-	public delegate void download_complete(Github.Release release, Github.Asset asset);
+	public delegate void download_completeEventHandler(Github.Release release, Github.Asset asset);
 	#endregion
 
 	#region Node Paths
@@ -75,7 +75,6 @@ public class DownloadGodotManager : ReferenceRect
 		iTotalBytes += bytes;
 		if (iFileSize >= 0) {
 			_ProgressBar.Value = iTotalBytes;
-			_ProgressBar.Update();
 		}
 	}
 
@@ -107,11 +106,11 @@ public class DownloadGodotManager : ReferenceRect
 			CleanupClient();
 		
 		client = new GDCSHTTPClient();
-		client.Connect("chunk_received", this, "OnChunkReceived");
+		client.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
 	}
 
 	void CleanupClient() {
-		client.Disconnect("chunk_received", this, "OnChunkReceived");
+		client.Disconnect("chunk_received", Callable.From<int>(OnChunkReceived));
 		client.QueueFree();
 		client = null;
 	}
@@ -122,7 +121,7 @@ public class DownloadGodotManager : ReferenceRect
 			client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, dlUri.Scheme == "https");
 		else
 			client.ClearProxy();
-		Task<HTTPClient.Status> cres = client.StartClient(dlUri.Host, dlUri.Port, (dlUri.Scheme == "https"));
+		Task<GDCSHTTPClient.Status> cres = client.StartClient(dlUri.Host, dlUri.Port, (dlUri.Scheme == "https"));
 
 		while (!cres.IsCompleted)
 			await this.IdleFrame();
@@ -143,7 +142,7 @@ public class DownloadGodotManager : ReferenceRect
 
 		if (redirect_codes.IndexOf(result.ResponseCode) >= 0)
 		{
-			dlUri = new Uri(result.Headers["Location"] as string);
+			dlUri = new Uri(result.Headers["Location"].AsString());
 			CleanupClient();
 			InitClient();
 			Task<bool> recurse = StartNetwork();
@@ -207,15 +206,14 @@ public class DownloadGodotManager : ReferenceRect
 		if (!Dir.Exists(sPath.GetBaseDir()))
 			Dir.CreateDirectory(sPath.GetBaseDir());
 		
-		File fh = new File();
-		Error err = fh.Open(sPath, File.ModeFlags.Write);
-		if (err != Error.Ok) {
-			GD.Print($"Failed to open file {sPath}, Error: {err}");
-			return false;
+		using (var fh = FileAccess.Open(sPath, FileAccess.ModeFlags.Write))
+		{
+			if (fh == null) {
+				GD.Print($"Failed to open file {sPath}");
+				return false;
+			}
+			fh.StoreBuffer(result.BodyRaw);
 		}
-
-		fh.StoreBuffer(result.BodyRaw);
-		fh.Close();
 
 		Visible = false;
 		CleanupClient();

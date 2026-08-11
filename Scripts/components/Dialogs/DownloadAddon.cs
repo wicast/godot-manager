@@ -7,11 +7,11 @@ using Uri = System.Uri;
 using DateTime = System.DateTime;
 using TimeSpan = System.TimeSpan;
 
-public class DownloadAddon : ReferenceRect
+public partial class DownloadAddon   : ReferenceRect
 {
 #region Signals
     [Signal]
-    public delegate void download_complete(AssetLib.Asset asset, AssetProject ap, AssetPlugin apl);
+    public delegate void download_completeEventHandler(AssetLib.Asset asset, AssetProject ap, AssetPlugin apl);
 #endregion
 
 #region Node Paths
@@ -48,7 +48,6 @@ public class DownloadAddon : ReferenceRect
     [NodePath("DownloadSpeedTimer")]
     Timer _DownloadSpeedTimer = null;
 
-    [NodePath("IndeterminateProgress")]
     Tween _IndeterminateProgress = null;
 #endregion
 
@@ -88,7 +87,6 @@ public class DownloadAddon : ReferenceRect
         iTotalBytes += bytes;
         if (iFileSize >= 0) {
             _ProgressBar.Value = iTotalBytes;
-            _ProgressBar.Update();
         }
     }
 
@@ -119,27 +117,27 @@ public class DownloadAddon : ReferenceRect
     }
 
     async Task StartIndeterminateTween() {
-        _ProgressBar.RectRotation = 0;
-        _ProgressBar.RectPivotOffset = new Vector2(_ProgressBar.RectSize.x/2,_ProgressBar.RectSize.y/2);
+        _ProgressBar.Rotation = 0;
+        _ProgressBar.PivotOffset = new Vector2(_ProgressBar.Size.X/2,_ProgressBar.Size.Y/2);
         _ProgressBar.Value = 0;
-        _ProgressBar.PercentVisible = false;
+        _ProgressBar.ShowPercentage = false;
         while (bDownloading) {
-            _IndeterminateProgress.InterpolateProperty(_ProgressBar, "value", 0, 100, 0.5f, Tween.TransitionType.Linear, Tween.EaseType.InOut);
-            _IndeterminateProgress.Start();
-            while (_IndeterminateProgress.IsActive() && bDownloading)
+            _IndeterminateProgress = CreateTween();
+            _IndeterminateProgress.TweenProperty(_ProgressBar, "value", 100, 0.5f).SetTrans(Tween.TransitionType.Linear).SetEase(Tween.EaseType.InOut);
+            while (_IndeterminateProgress.IsRunning() && bDownloading)
                 await this.IdleFrame();
-            _ProgressBar.RectRotation = 180;
-            _IndeterminateProgress.InterpolateProperty(_ProgressBar, "value", 100, 0, 0.5f, Tween.TransitionType.Linear, Tween.EaseType.InOut);
-            _IndeterminateProgress.Start();
-            while (_IndeterminateProgress.IsActive() && bDownloading)
+            _ProgressBar.Rotation = 180;
+            _IndeterminateProgress = CreateTween();
+            _IndeterminateProgress.TweenProperty(_ProgressBar, "value", 0, 0.5f).SetTrans(Tween.TransitionType.Linear).SetEase(Tween.EaseType.InOut);
+            while (_IndeterminateProgress.IsRunning() && bDownloading)
                 await this.IdleFrame();
-            _ProgressBar.RectRotation = 0;
+            _ProgressBar.Rotation = 0;
         }
-        if (_IndeterminateProgress.IsActive())
-            _IndeterminateProgress.StopAll();
-        _ProgressBar.RectRotation = 0;
+        if (_IndeterminateProgress.IsRunning())
+            _IndeterminateProgress.Kill();
+        _ProgressBar.Rotation = 0;
         _ProgressBar.Value = 0;
-        _ProgressBar.PercentVisible = true;
+        _ProgressBar.ShowPercentage = true;
     }
 
     public async Task<bool> StartNetwork()
@@ -152,7 +150,7 @@ public class DownloadAddon : ReferenceRect
         else
             client.ClearProxy();
 
-		Task<HTTPClient.Status> cres = client.StartClient(dlUri.Host, dlUri.Port, (dlUri.Scheme == "https"));
+		Task<GDCSHTTPClient.Status> cres = client.StartClient(dlUri.Host, dlUri.Port, (dlUri.Scheme == "https"));
 
 		while (!cres.IsCompleted)
 			await this.IdleFrame();
@@ -176,7 +174,7 @@ public class DownloadAddon : ReferenceRect
 
 		if (redirect_codes.IndexOf(result.ResponseCode) >= 0)
 		{
-			dlUri = new Uri(result.Headers["Location"] as string);
+			dlUri = new Uri(result.Headers["Location"].AsString());
             CleanupClient();
 			Task<bool> recurse = StartNetwork();
 			await recurse;
@@ -245,15 +243,14 @@ public class DownloadAddon : ReferenceRect
 		if (!sPath.EndsWith(".zip"))
 			sPath += ".zip";
         
-        File fh = new File();
-        Error err = fh.Open(sPath, File.ModeFlags.Write);
-        if (err != Error.Ok) {
-            GD.Print($"Failed to open file {sPath}, Error: {err}");
-            return false;
+        using (var fh = FileAccess.Open(sPath, FileAccess.ModeFlags.Write))
+        {
+            if (fh == null) {
+                GD.Print($"Failed to open file {sPath}");
+                return false;
+            }
+            fh.StoreBuffer(result.BodyRaw);
         }
-        
-        fh.StoreBuffer(result.BodyRaw);
-        fh.Close();
 
 		Visible = false;
 		CleanupClient();
@@ -287,9 +284,9 @@ public class DownloadAddon : ReferenceRect
 
 	private void UpdateFields(HTTPResponse result)
 	{
-		if (result.Headers.Contains("Content-Length"))
+		if (result.Headers.ContainsKey("Content-Length"))
 		{
-			if (int.TryParse(result.Headers["Content-Length"] as string, out iFileSize))
+			if (int.TryParse(result.Headers["Content-Length"].AsString(), out iFileSize))
 			{
 				_FileSize.Text = Util.FormatSize(iFileSize);
 				_ProgressBar.MaxValue = iFileSize;
@@ -326,12 +323,12 @@ public class DownloadAddon : ReferenceRect
         if (client != null)
             CleanupClient();
 		client = new GDCSHTTPClient();
-		client.Connect("chunk_received", this, "OnChunkReceived");
+		client.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
 	}
 
 	private void CleanupClient()
 	{
-		client.Disconnect("chunk_received", this, "OnChunkReceived");
+		client.Disconnect("chunk_received", Callable.From<int>(OnChunkReceived));
 		client.QueueFree();
 		client = null;
 	}

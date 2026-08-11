@@ -5,7 +5,7 @@ using System.Linq;
 using GodotManager.libs.data.Internal;
 using SFile = System.IO.File;
 
-public class CentralStore {
+public partial class CentralStore   {
 #region C# Pattern for Singleton
 	static CentralStore _instance;
 
@@ -44,8 +44,8 @@ public class CentralStore {
 #region Instance Methods
 	public bool LoadDatabase(bool recursive = false)
 	{
-		File db = new File();
-		if (db.Open(Util.GetDatabaseFile(), File.ModeFlags.Read) == Error.Ok) {
+		FileAccess db = FileAccess.Open(Util.GetDatabaseFile(), FileAccess.ModeFlags.Read);
+		if (db != null) {
 			var data = db.GetAsText();
 			db.Close();
 			if (string.IsNullOrEmpty(data))
@@ -66,22 +66,22 @@ public class CentralStore {
 	}
 
 	public void SaveDatabase() {
-		File db = new File();
 		var path = Util.GetDatabaseFile().GetOSDir().NormalizePath();
 		var exists = SFile.Exists(path);
 		if (exists)
 		{
-			if (db.Open(Util.GetDatabaseFile(), File.ModeFlags.Read) == Error.Ok)
+			FileAccess dbRead = FileAccess.Open(Util.GetDatabaseFile(), FileAccess.ModeFlags.Read);
+			if (dbRead != null)
 			{
-				var data = db.GetAsText();
+				var data = dbRead.GetAsText();
 				if (!string.IsNullOrEmpty(data))
 					SFile.Copy(Util.GetDatabaseFile().GetOSDir().NormalizePath(), Util.GetBackupDatabaseFile().GetOSDir().NormalizePath(), true);
-				db.Close();
-				db = new File();
+				dbRead.Close();
 			}
 		}
 		SortGodotVersions();
-		if (db.Open(Util.GetDatabaseFile(), File.ModeFlags.Write) == Error.Ok) {
+		FileAccess db = FileAccess.Open(Util.GetDatabaseFile(), FileAccess.ModeFlags.Write);
+		if (db != null) {
 			var data = JsonConvert.SerializeObject(_data);
 			db.StoreString(data);
 			db.Close();

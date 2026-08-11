@@ -3,10 +3,10 @@ using Godot.Sharp.Extras;
 using Godot.Collections;
 
 
-public class ImportProject : ReferenceRect
+public partial class ImportProject   : ReferenceRect
 {
     [Signal]
-    public delegate void update_projects();
+    public delegate void update_projectsEventHandler();
 
 #region Node Paths
     [NodePath("PC/CC/P/VB/MCContent/VB/HBoxContainer/LocationValue")]
@@ -78,7 +78,7 @@ public class ImportProject : ReferenceRect
             return;
         }
         int id = _godotVersions.GetItemId(_godotVersions.Selected);
-        GodotVersion gdVers = CentralStore.Instance.FindVersion(_godotVersions.GetItemMetadata(id) as string);
+        GodotVersion gdVers = CentralStore.Instance.FindVersion(_godotVersions.GetItemMetadata(id).AsString());
         var file = _locationValue.Text;
         if (!file.EndsWith("project.godot"))
             file = file.Join("project.godot");
@@ -118,19 +118,19 @@ public class ImportProject : ReferenceRect
 
     [SignalHandler("pressed", nameof(_locationBrowse))]
     void OnLocationBrowsePressed() {
-        AppDialogs.ImportFileDialog.WindowTitle = Tr("Open Godot Project...");
+        AppDialogs.ImportFileDialog.Title = Tr("Open Godot Project...");
         AppDialogs.ImportFileDialog.Filters = new string[] { "*.godot" };
         AppDialogs.ImportFileDialog.CurrentFile = "";
         AppDialogs.ImportFileDialog.CurrentPath = _locationValue.Text == "" ? CentralStore.Settings.ProjectPath : _locationValue.Text;
-        AppDialogs.ImportFileDialog.PopupCentered(new Vector2(510, 390));
-        AppDialogs.ImportFileDialog.Connect("file_selected", this, "OnFileSelected");
-        AppDialogs.ImportFileDialog.Connect("popup_hide", this, "OnLocationImportHidden", null, (uint)ConnectFlags.Oneshot);
+        AppDialogs.ImportFileDialog.PopupCentered(new Vector2I(510, 390));
+        AppDialogs.ImportFileDialog.Connect("file_selected", Callable.From<string>(OnFileSelected));
+        AppDialogs.ImportFileDialog.Connect("popup_hide", Callable.From(OnLocationImportHidden), (uint)ConnectFlags.OneShot);
     }
 
     void OnLocationImportHidden()
     {
-        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", this, "OnFileSelected"))
-            AppDialogs.ImportFileDialog.Disconnect("file_selected", this, "OnFileSelected");
+        if (AppDialogs.ImportFileDialog.IsConnected("file_selected", Callable.From<string>(OnFileSelected)))
+            AppDialogs.ImportFileDialog.Disconnect("file_selected", Callable.From<string>(OnFileSelected));
     }
 
     void OnFileSelected(string file_path) {

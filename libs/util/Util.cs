@@ -10,10 +10,10 @@ using SFile = System.IO.File;
 using System.Linq;
 using System.IO.Compression;
 
-public static class Util
+public static partial class Util  
 {
 
-	private static Godot.Object dummy = new Godot.Object();
+	private static GodotObject dummy = new GodotObject();
 	public static string GetResourceBase(this string path, string file) {
 		return Path.Combine(path.GetBaseDir(), file.Replace("res://", "")).Replace(@"\","/");
 	}
@@ -153,8 +153,8 @@ public static class Util
 		file.CopyTo(destFile);
 	}
 
-	public static SignalAwaiter IdleFrame(this Godot.Object obj) {
-		return obj.ToSignal(Engine.GetMainLoop(), "idle_frame");
+	public static SignalAwaiter IdleFrame(this GodotObject obj) {
+		return obj.ToSignal(Engine.GetMainLoop(), "process_frame");
 	}
 
 	public static SignalAwaiter WaitTimer(this Godot.Node obj, int milliseconds) {
@@ -178,8 +178,8 @@ public static class Util
 		
 		if (path.StartsWith("res://"))
 		{
-			StreamTexture tex = GD.Load<StreamTexture>(path);
-			image = tex.GetData();
+			Texture2D tex = GD.Load<Texture2D>(path);
+			image = tex.GetImage();
 		} else {
 			if (!SFile.Exists(path.GetOSDir().NormalizePath()))
 				return null;
@@ -201,9 +201,7 @@ public static class Util
 					if (err1 != Error.Ok)
 						return null;
 
-					var texture1 = new ImageTexture();
-					texture1.CreateFromImage(image);
-					return texture1;
+					return ImageTexture.CreateFromImage(image);
 				}
 			}
 
@@ -211,9 +209,7 @@ public static class Util
 			if (err != Error.Ok)
 				return null;
 		}
-		var texture = new ImageTexture();
-		texture.CreateFromImage(image);
-		return texture;
+		return ImageTexture.CreateFromImage(image);
 	}
 
 	public static string Which(string cmd)
@@ -224,11 +220,11 @@ public static class Util
 		#elif GODOT_WINDOWS || GODOT_UWP
 		string which = "where";
 		#endif
-		int exit_code = OS.Execute(which, new string[] { cmd }, true, output);
+		int exit_code = OS.Execute(which, new string[] { cmd }, output, true, false);
 		if (exit_code != 0)
 			return null;
 		else
-			return (output[0] as string).StripEdges();
+			return output[0].AsString().StripEdges();
 	}
 	
 	public static string FindChmod()
@@ -246,7 +242,7 @@ public static class Util
 		if (chmod_cmd == "")
 			return false;
 		
-		int exit_code = OS.Execute(chmod_cmd, new string[] { perms.ToString(), path.GetOSDir() }, true);
+		int exit_code = OS.Execute(chmod_cmd, new string[] { perms.ToString(), path.GetOSDir() }, null, true, false);
 		if (exit_code != 0) 
 			return false;
 		
@@ -258,7 +254,7 @@ public static class Util
 		if (xattr_cmd == "")
 			return false;
 		
-		int exit_code = OS.Execute(xattr_cmd, new string[] { flags, path.GetOSDir() }, true);
+		int exit_code = OS.Execute(xattr_cmd, new string[] { flags, path.GetOSDir() }, null, true, false);
 		if (exit_code != 0)
 			return false;
 		
@@ -281,7 +277,7 @@ public static class Util
 		using (var fh = zae.Open()) {
 			fh.Read(buffer, 0, (int)zae.Length);
 		}
-		return buffer.GetStringFromUTF8();
+		return System.Text.Encoding.UTF8.GetString(buffer);
 	}
 
 	public static byte[] ReadBuffer(this ZipArchiveEntry zae) {
@@ -347,11 +343,11 @@ public static class Util
 
 		if (pkexec.Contains("sudo") && !(pkexec.Contains("gksudo") || pkexec.Contains("kdesudo")))
 		{
-			return OS.Execute("bash", new string[] { pkexec, "-e", command }, true, null, false, true);
+			return OS.Execute("bash", new string[] { pkexec, "-e", command }, null, false, true);
 		}
 
 		args.Add(command);
-		return OS.Execute(pkexec, args.ToArray(), true);
+		return OS.Execute(pkexec, args.ToArray(), null, true, false);
 	}
 
 	public static int XdgDesktopInstall(string desktopFile)
@@ -364,7 +360,7 @@ public static class Util
 		}
 
 		return OS.Execute(xdg_desktop_menu,
-			new string[] { "install", "--mode", "user", desktopFile }, true);
+			new string[] { "install", "--mode", "user", desktopFile }, null, true, false);
 	}
 
 	public static int XdgDesktopUninstall(string desktopFile)
@@ -377,7 +373,7 @@ public static class Util
 		}
 
 		return OS.Execute(xdg_desktop_menu,
-			new string[] { "uninstall", "--mode", "user", desktopFile }, true);
+			new string[] { "uninstall", "--mode", "user", desktopFile }, null, true, false);
 	}
 
 	public static int XdgDesktopUpdate()
@@ -390,7 +386,7 @@ public static class Util
 		}
 
 		return OS.Execute(xdg_desktop_menu,
-			new string[] { "forceupdate", "--mode", "user" });
+			new string[] { "forceupdate", "--mode", "user" }, null, true, false);
 	}
 #endif
 }

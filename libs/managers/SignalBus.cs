@@ -1,6 +1,6 @@
 using Godot;
 
-public class SignalBus : Node
+public partial class SignalBus : Node
 {
-    [Signal] public delegate void update_projects();
+    [Signal] public delegate void update_projectsEventHandler();
 }

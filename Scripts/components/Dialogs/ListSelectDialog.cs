@@ -2,13 +2,13 @@ using Godot;
 using Godot.Collections;
 using Godot.Sharp.Extras;
 
-public class ListSelectDialog : ReferenceRect
+public partial class ListSelectDialog   : ReferenceRect
 {
     [Signal]
-    public delegate void option_selected(string data);
+    public delegate void option_selectedEventHandler(string data);
 
     [Signal]
-    public delegate void option_cancelled();
+    public delegate void option_cancelledEventHandler();
     
     [NodePath("PC/CC/P/VB/MCContent/VC/Title")]
     private Label _title = null;
@@ -51,7 +51,7 @@ public class ListSelectDialog : ReferenceRect
         _options.Clear();
         foreach (var okv in options)
         {
-            int indx = _options.Items.Count;
+            int indx = _options.ItemCount;
             _options.AddItem(okv.Key);
             _options.SetItemMetadata(indx, okv.Value);
         }
@@ -71,6 +71,6 @@ public class ListSelectDialog : ReferenceRect
     {
         Visible = false;
         var indx = _options.Selected;
-        EmitSignal("option_selected", _options.GetItemMetadata(indx) ?? _options.GetItemText(indx));
+        EmitSignal("option_selected", _options.GetItemMetadata(indx).AsString() ?? _options.GetItemText(indx));
     }
 }

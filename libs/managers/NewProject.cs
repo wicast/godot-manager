@@ -6,7 +6,7 @@ using SFile = System.IO.File;
 using StreamWriter = System.IO.StreamWriter;
 using BinaryWriter = System.IO.BinaryWriter;
 
-public class NewProject : Object
+public partial class NewProject   : GodotObject
 {
 	public string ProjectName;
 	public string ProjectLocation;
@@ -34,14 +34,14 @@ public class NewProject : Object
 			// Project file should be provided in the Template.
 			ExtractTemplate();
 			ProjectConfig pf = new ProjectConfig();
-			pf.Load(ProjectLocation.PlusFile("project.godot").NormalizePath());
+			pf.Load(ProjectLocation.Join("project.godot").NormalizePath());
 			pf.SetValue("application", "config/name", $"\"{ProjectName}\"");
 
 			// Need way to compile Assets before Enabling Plugins
 			// if (Plugins.Count > 0)
 			// 	SetupPlugins(pf);
 
-			pf.Save(ProjectLocation.PlusFile("project.godot"));
+			pf.Save(ProjectLocation.Join("project.godot"));
 			ExtractPlugins();
 		}
 
@@ -59,11 +59,11 @@ public class NewProject : Object
 				if (zae.FullName.EndsWith("/"))
 				{
 					// Is folder, we need to ensure to make the folder in the Project Location.
-					Directory.CreateDirectory(ProjectLocation.PlusFile(path));
+					Directory.CreateDirectory(ProjectLocation.Join(path));
 				}
 				else
 				{
-					zae.ExtractToFile(ProjectLocation.PlusFile(path));
+					zae.ExtractToFile(ProjectLocation.Join(path));
 				}
 			}
 		}
@@ -71,8 +71,8 @@ public class NewProject : Object
 
 	private void ExtractPlugins()
 	{
-		if (!Directory.Exists(ProjectLocation.PlusFile("addons").NormalizePath()))
-			Directory.CreateDirectory(ProjectLocation.PlusFile("addons"));
+		if (!Directory.Exists(ProjectLocation.Join("addons").NormalizePath()))
+			Directory.CreateDirectory(ProjectLocation.Join("addons"));
 
 		foreach (AssetPlugin plgn in Plugins)
 		{
@@ -83,13 +83,13 @@ public class NewProject : Object
 
 	private void CopyIcon()
 	{
-		var image = GD.Load<Texture>("res://Assets/Icons/default_project_icon.png");
-		image.GetData().SavePng(ProjectLocation.PlusFile("icon.png").NormalizePath());
+		var image = GD.Load<Texture2D>("res://Assets/Icons/default_project_icon.png");
+		image.GetImage().SavePng(ProjectLocation.Join("icon.png").NormalizePath());
 	}
 
 	private void CreateDefaultEnvironment()
 	{
-		using (StreamWriter writer = new StreamWriter(ProjectLocation.PlusFile("default_env.tres").NormalizePath()))
+		using (StreamWriter writer = new StreamWriter(ProjectLocation.Join("default_env.tres").NormalizePath()))
 		{
 			writer.WriteLine("[gd_resource type=\"Environment\" load_steps=2 format=2]");
 			writer.WriteLine("");
@@ -132,6 +132,6 @@ public class NewProject : Object
 			pf.SetValue("rendering", "quality/driver/driver_name", Gles3 ? "\"GLES3\"" : "\"GLES2\"");
 		}
 
-		pf.Save(ProjectLocation.PlusFile("project.godot").NormalizePath());
+		pf.Save(ProjectLocation.Join("project.godot").NormalizePath());
 	}
 }

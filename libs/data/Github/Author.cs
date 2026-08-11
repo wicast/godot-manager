@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Github {
 	[JsonObject(MemberSerialization.OptIn)]
-	public class Author : Object {
+	public partial class Author   : GodotObject {
 		[JsonProperty] public string Login;
 		[JsonProperty] public int Id;
 		[JsonProperty] public string NodeId;
