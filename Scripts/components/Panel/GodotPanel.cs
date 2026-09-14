@@ -46,7 +46,7 @@ public partial class GodotPanel   : Panel
     private PackedScene GodotLE = null;
 
     [Resource("res://components/EnginePopup.tscn")]
-    private PackedScene EnginePopup = null;
+    private PackedScene EnginePopupScene = null;
 
     #endregion
 
@@ -65,6 +65,10 @@ public partial class GodotPanel   : Panel
     public override async void _Ready()
     {
         this.OnReady();
+        // [Tool] runs this in the editor; skip game/runtime setup there.
+        if (Engine.IsEditorHint())
+            return;
+
         if (InWizard)
         {
             var node = GetNode<HBoxContainer>("VB/MC/HC");
@@ -75,7 +79,7 @@ public partial class GodotPanel   : Panel
                 child.Visible = false;
             }
         }
-        _enginePopup = EnginePopup.Instantiate<EnginePopup>();
+        _enginePopup = EnginePopupScene.Instantiate<EnginePopup>();
         _enginePopup.Name = "EngineContextMenu";
         AddChild(_enginePopup);
 
