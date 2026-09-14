@@ -195,11 +195,3 @@ offset_top = 92.0
 offset_bottom = 154.0
 hint_tooltip = "Available versions to Download"
 CategoryName = "Available to Download"
-
-[node name="RefreshDownloads" type="Button" parent="VB/SC/GodotList/Available/hc1"]
-offset_left = 894.0
-offset_right = 1024.0
-offset_bottom = 30.0
-custom_minimum_size = Vector2(130, 30)
-size_flags_vertical = 4
-text = "Refresh Downloads"

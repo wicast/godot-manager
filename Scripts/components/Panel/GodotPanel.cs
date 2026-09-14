@@ -24,7 +24,6 @@ public partial class GodotPanel   : Panel
     [NodePath("VB/MC/HC/ActionButtons")]
     ActionButtons ActionButtons = null;
 
-    [NodePath("VB/SC/GodotList/Available/hc1/RefreshDownloads")]
     Button RefreshDownloads = null;
 
     [NodePath("VB/MC/HC/DownloadSource")]
@@ -79,14 +78,33 @@ public partial class GodotPanel   : Panel
                 child.Visible = false;
             }
         }
-        _enginePopup = EnginePopupScene.Instantiate<EnginePopup>();
-        _enginePopup.Name = "EngineContextMenu";
-        AddChild(_enginePopup);
+
+        RefreshDownloads = new Button
+        {
+            Text = Tr("Refresh Downloads"),
+            CustomMinimumSize = new Vector2(130, 30),
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+        };
+        RefreshDownloads.Pressed += OnPressed_RefreshDownloads;
+        var availableHeader = Available.GetNode<HBoxContainer>("hc1");
+        availableHeader.AddChild(RefreshDownloads);
+        // Keep the title expanding so the button sits on the right.
+        var titleLabel = availableHeader.GetNode<Label>("CategoryName");
+        titleLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+
+        if (EnginePopupScene != null)
+        {
+            _enginePopup = EnginePopupScene.Instantiate<EnginePopup>();
+            _enginePopup.Name = "EngineContextMenu";
+            AddChild(_enginePopup);
+        }
 
         if (!InWizard)
         {
             GetParent<TabContainer>().Connect("tab_changed", Callable.From<int>(OnPageChanged));
-            AppDialogs.AddCustomGodot.Connect("added_custom_godot", Callable.From(PopulateList));
+            var addCustom = AppDialogs.AddCustomGodot;
+            if (addCustom != null)
+                addCustom.Connect("added_custom_godot", Callable.From(PopulateList));
         }
 
         DownloadSource.Clear();
@@ -105,43 +123,45 @@ public partial class GodotPanel   : Panel
 
         OnlyMono();
 
-        AppDialogs.ManageCustomDownloads.Connect("update_list", Callable.From(OnUpdateList));
+        var manageCustom = AppDialogs.ManageCustomDownloads;
+        if (manageCustom != null)
+            manageCustom.Connect("update_list", Callable.From(OnUpdateList));
 
         if (CentralStore.Mirrors.Count == 0 || CentralStore.Settings.LastMirrorCheck < (DateTime.UtcNow - CentralStore.Settings.CheckInterval))
         {
             while(RequestingMirrors)
                 await this.IdleFrame();
-            
+
             RequestingMirrors = true;
             var res = MirrorManager.Instance.GetMirrors();
             while (!res.IsCompleted)
                 await this.IdleFrame();
             RequestingMirrors = false;
-            
-            if (res.Result.Count == 0)
-            {
-                return;
-            }
 
-            foreach (MirrorSite site in res.Result)
+            if (res.Result.Count > 0)
             {
-                var cres = from csite in CentralStore.Mirrors
-                           where csite.Id == site.Id
-                           select csite;
-                if (cres.FirstOrDefault<MirrorSite>() == null)
+                foreach (MirrorSite site in res.Result)
                 {
-                    CentralStore.Mirrors.Add(site);
-                    CentralStore.MRVersions[site.Id] = new Array<MirrorVersion>();
-                    CentralStore.Settings.LastUpdateMirrorCheck[site.Id] = new UpdateCheck()
+                    var cres = from csite in CentralStore.Mirrors
+                               where csite.Id == site.Id
+                               select csite;
+                    if (cres.FirstOrDefault<MirrorSite>() == null)
                     {
-                        LastCheck = DateTime.UtcNow - TimeSpan.FromDays(1)
-                    };
+                        CentralStore.Mirrors.Add(site);
+                        CentralStore.MRVersions[site.Id] = new Array<MirrorVersion>();
+                        CentralStore.Settings.LastUpdateMirrorCheck[site.Id] = new UpdateCheck()
+                        {
+                            LastCheck = DateTime.UtcNow - TimeSpan.FromDays(1)
+                        };
+                    }
                 }
             }
         }
 
         foreach (MirrorSite site in CentralStore.Mirrors)
             DownloadSource.AddItem(site.Name, site.Id);
+
+        await PopulateList();
     }
 
     async void OnIdPressed_TagSelection(int id)
@@ -218,7 +238,6 @@ public partial class GodotPanel   : Panel
         await PopulateList();
     }
 
-    [SignalHandler("pressed", nameof(RefreshDownloads))]
     async void OnPressed_RefreshDownloads()
     {
         await GatherReleases();
