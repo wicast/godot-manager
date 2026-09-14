@@ -12,7 +12,8 @@ public partial class SplashScreen   : Control
 	public override void _Ready()
 	{
 		this.OnReady();
-		VersionInfo.Text = $"Version {VERSION.GodotManager}";
+		var version = ProjectSettings.GetSetting("application/config/version", "0.0.0").AsString();
+		VersionInfo.Text = $"Version {version}";
 		var timer = GetTree().CreateTimer(0.4f);
 		timer.Connect("timeout", Callable.From(OnTimeout_LoadResources));
 	}

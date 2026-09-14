@@ -12,6 +12,7 @@ config_version=5
 
 config/name="Godot-Manager"
 config/description="A Complete solution for Godot, allowing you to manage Projects and versions of the Godot Engine on the fly."
+config/version="0.3.0"
 run/main_scene="res://components/Panels/SplashScreen.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Godot-Manager"

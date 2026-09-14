@@ -102,12 +102,17 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]
-offset_left = 283.0
-offset_top = 377.0
-offset_right = 747.0
-offset_bottom = 450.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 30.0
+offset_right = 150.0
+offset_bottom = 80.0
 theme_override_fonts/font = SubResource("11")
 text = "Godot Manager"
+horizontal_alignment = 1
 
 [node name="VersionInfo" type="Label" parent="."]
 anchor_left = 0.5
@@ -120,3 +125,4 @@ offset_right = 122.0
 offset_bottom = 167.5
 theme_override_fonts/font = SubResource("12")
 text = "Version 0.2.0"
+horizontal_alignment = 1
