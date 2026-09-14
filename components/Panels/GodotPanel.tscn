@@ -5,9 +5,9 @@
 [ext_resource type="PackedScene" path="res://components/CategoryList.tscn" id="3"]
 [ext_resource type="FontFile" path="res://Resources/Fonts/droid-bold-14.tres" id="4"]
 [ext_resource type="Texture2D" path="res://Assets/Icons/import.svg" id="5"]
-[ext_resource type="Texture2D" path="res://Assets/Icons/web.svg" id="6"]
 [ext_resource type="Texture2D" path="res://Assets/Icons/check_for_updates.png" id="7"]
 [ext_resource type="PackedScene" path="res://components/ActionButtons.tscn" id="8"]
+[ext_resource type="Texture2D" path="res://Assets/Icons/download.svg" id="9"]
 
 [sub_resource type="StyleBoxFlat" id="1"]
 bg_color = Color(0.294118, 0.317647, 0.388235, 1)
@@ -81,8 +81,8 @@ __meta__ = {
 offset_left = 418.0
 offset_right = 506.0
 offset_bottom = 40.0
-Icons = [ExtResource("5"), ExtResource("6"), ExtResource("7")]
-HelpText = ["Add Custom Godot", "Download from Website", "Check for Updates to Godot Engine"]
+Icons = [ExtResource("5"), ExtResource("7"), ExtResource("9")]
+HelpText = ["Add Custom Godot", "Check for Updates to Godot Engine", "Manage Custom Downloads"]
 
 [node name="Spacer2" type="Control" parent="VB/MC/HC"]
 offset_left = 514.0
@@ -195,3 +195,11 @@ offset_top = 92.0
 offset_bottom = 154.0
 hint_tooltip = "Available versions to Download"
 CategoryName = "Available to Download"
+
+[node name="RefreshDownloads" type="Button" parent="VB/SC/GodotList/Available/hc1"]
+offset_left = 894.0
+offset_right = 1024.0
+offset_bottom = 30.0
+custom_minimum_size = Vector2(130, 30)
+size_flags_vertical = 4
+text = "Refresh Downloads"

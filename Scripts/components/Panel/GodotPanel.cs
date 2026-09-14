@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Godot;
 using Godot.Collections;
 using Godot.Sharp.Extras;
@@ -23,6 +23,9 @@ public partial class GodotPanel   : Panel
 
     [NodePath("VB/MC/HC/ActionButtons")]
     ActionButtons ActionButtons = null;
+
+    [NodePath("VB/SC/GodotList/Available/hc1/RefreshDownloads")]
+    Button RefreshDownloads = null;
 
     [NodePath("VB/MC/HC/DownloadSource")]
     OptionButton DownloadSource = null;
@@ -202,45 +205,19 @@ public partial class GodotPanel   : Panel
     async void OnItemSelected_DownloadSource(int index)
     {
         if (index == 0)
-        {
             OnlyMono();
-            if (CentralStore.GHVersions.Count == 0)
-            {
-                var t = GatherReleases();
-                while (!t.IsCompleted)
-                {
-                    await this.IdleFrame();
-                }
-            }
-            else
-            {
-                if (CentralStore.Settings.CheckForUpdates &&
-                    (DateTime.UtcNow - CentralStore.Settings.LastCheck) >= CentralStore.Settings.CheckInterval)
-                {
-                    await CheckForUpdates();
-                }
-            }
-        }
         else
-        {
             AllTags();
-            int id = DownloadSource.GetSelectedId();
-            if (CentralStore.MRVersions[id].Count == 0)
-            {
-                await GatherReleases();
-            }
-            else
-            {
-                if (CentralStore.Settings.CheckForUpdates &&
-                    (DateTime.UtcNow - CentralStore.Settings.LastUpdateMirrorCheck[id].LastCheck) >= CentralStore.Settings.CheckInterval)
-                {
-                    await CheckForUpdates();
-                }
-            }
-        }
 
         if (CentralStore.Settings.UseLastMirror)
             CentralStore.Settings.LastEngineMirror = index;
+        await PopulateList();
+    }
+
+    [SignalHandler("pressed", nameof(RefreshDownloads))]
+    async void OnPressed_RefreshDownloads()
+    {
+        await GatherReleases();
         await PopulateList();
     }
 
@@ -252,11 +229,11 @@ public partial class GodotPanel   : Panel
             case 0:     // Add Custom Godot
                 AppDialogs.AddCustomGodot.ShowDialog();
                 break;
-            case 1:     // Manage Custom Godot Downloads
-                AppDialogs.ManageCustomDownloads.ShowDialog();
-                break;
-            case 2:     // Manually Check for Updates for Godot
+            case 1:     // Manually Check for Updates for Godot
                 await CheckForUpdates();
+                break;
+            case 2:     // Manage Custom Godot Downloads
+                AppDialogs.ManageCustomDownloads.ShowDialog();
                 break;
         }
     }
@@ -274,43 +251,6 @@ public partial class GodotPanel   : Panel
                 AllTags();
         }
 
-        if (DownloadSource.Selected == 0)
-        {
-            if (CentralStore.GHVersions.Count == 0)
-            {
-                var t = GatherReleases();
-                while (!t.IsCompleted)
-                {
-                    await this.IdleFrame();
-                }
-            }
-            else
-            {
-                if (CentralStore.Settings.CheckForUpdates &&
-                    (DateTime.UtcNow - CentralStore.Settings.LastCheck) >= CentralStore.Settings.CheckInterval)
-                {
-                    await CheckForUpdates();
-                }
-            }
-        }
-        else
-        {
-            MirrorSite site = CentralStore.Mirrors[DownloadSource.Selected - 1];
-            if (CentralStore.MRVersions[site.Id].Count == 0)
-            {
-                var t = GatherReleases();
-                while (!t.IsCompleted)
-                    await this.IdleFrame();
-            }
-            else
-            {
-                if (CentralStore.Settings.CheckForUpdates &&
-                    (DateTime.UtcNow - CentralStore.Settings.LastUpdateMirrorCheck[site.Id].LastCheck) >= CentralStore.Settings.CheckInterval)
-                {
-                    await CheckForUpdates();
-                }
-            }
-        }
         await PopulateList();
     }
 
