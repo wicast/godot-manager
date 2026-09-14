@@ -5,7 +5,7 @@ using Thread = System.Threading.Thread;
 
 public partial class SplashScreen   : Control
 {
-	[NodePath] private Label VersionInfo = null;
+	[NodePath("Center/Content/VersionInfo")] private Label VersionInfo = null;
 	private Thread _thread;
 
 	// Called when the node enters the scene tree for the first time.
