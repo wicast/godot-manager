@@ -150,7 +150,7 @@ public partial class GodotInstaller   : GodotObject {
 		while (!resp.IsCompleted)
 			await this.IdleFrame();
 
-		if (resp.Result.ResponseCode == 302) {
+		if (resp.Result.ResponseCode is 301 or 302 or 303 or 307 or 308) {
 			return await FollowRedirect((string)resp.Result.Headers["Location"]);
 		}
 
@@ -163,31 +163,46 @@ public partial class GodotInstaller   : GodotObject {
 			_client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, dlUri.Scheme == "https");
 		else
 			_client.ClearProxy();
-		
-		var resp = FollowRedirect();
 
-		while (!resp.IsCompleted)
+		var respTask = FollowRedirect();
+		while (!respTask.IsCompleted)
 			await this.IdleFrame();
-		
-		if (resp.Result == null || resp.Result.BodyRaw == null) {
+
+		var resp = respTask.Result;
+		if (resp == null || resp.BodyRaw == null || resp.BodyRaw.Length == 0) {
 			EmitSignal("download_failed", this, (int)GDCSHTTPClient.Status.Body);
 			return;
 		}
 
-		SFile.WriteAllBytes(_version.CacheLocation, resp.Result.BodyRaw);
+		try {
+			var dir = FPath.GetDirectoryName(_version.CacheLocation.GetOSDir().NormalizePath());
+			if (!string.IsNullOrEmpty(dir) && !SDirectory.Exists(dir))
+				SDirectory.CreateDirectory(dir);
+			SFile.WriteAllBytes(_version.CacheLocation.GetOSDir().NormalizePath(), resp.BodyRaw);
+		} catch (System.Exception ex) {
+			GD.PrintErr($"Failed to write download cache: {ex.Message}");
+			EmitSignal("download_failed", this, (int)GDCSHTTPClient.Status.Body);
+			return;
+		}
+
 		EmitSignal("download_completed", this);
 	}
 
 	public void Install() {
-		string instDir = _version.Location;
+		string cachePath = _version.CacheLocation.GetOSDir().NormalizePath();
+		if (!SFile.Exists(cachePath))
+			throw new System.IO.FileNotFoundException($"Download cache missing: {cachePath}");
+
+		string instDir = ProjectSettings.GlobalizePath(_version.Location).GetOSDir().NormalizePath();
 #if GODOT_WINDOWS || GODOT_UWP || GODOT_LINUXBSD || GODOT_X11
 		if (_version.IsMono)
 			instDir = instDir.GetBaseDir();
 #endif
-		ZipFile.ExtractToDirectory(_version.CacheLocation, ProjectSettings.GlobalizePath(instDir));
+		SDirectory.CreateDirectory(instDir);
+		ZipFile.ExtractToDirectory(cachePath, instDir, overwriteFiles: true);
 
 		Array<string> fileList = new Array<string>();
-		using (ZipArchive za = ZipFile.OpenRead(_version.CacheLocation.GetOSDir().NormalizePath())) {
+		using (ZipArchive za = ZipFile.OpenRead(cachePath)) {
 			foreach(ZipArchiveEntry zae in za.Entries) {
 				fileList.Add(zae.Name);
 			}

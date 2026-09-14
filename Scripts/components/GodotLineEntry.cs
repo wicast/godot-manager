@@ -364,8 +364,14 @@ public partial class GodotLineEntry   : HBoxContainer
     public void StartDownloadStats(int totalSize) {
         dtStartTime = DateTime.Now;
         TotalSize = totalSize;
+        iLastByteCount = 0;
+        adSpeedStack.Clear();
         _progressBar.MinValue = 0;
-        _progressBar.MaxValue = totalSize;
+        _progressBar.MaxValue = totalSize > 0 ? totalSize : 1;
+        _progressBar.Value = 0;
+        _fileSize.Text = $"0/{Util.FormatSize(totalSize)}";
+        _downloadSpeed.Text = string.Format(Tr("Speed: {0}/s"), Util.FormatSize(0));
+        _etaRemaining.Text = Tr("ETA: ") + "--:--:--";
         _downloadSpeedTimer.Start();
     }
 

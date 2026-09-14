@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using Godot.Collections;
 using Godot.Sharp.Extras;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Uri = System.Uri;
@@ -368,16 +369,29 @@ public partial class GodotPanel   : Panel
 
     async void OnDownloadCompleted(GodotInstaller installer, GodotLineEntry gle)
     {
+        gle.StopDownloadStats();
         Downloading.List.RemoveChild(gle);
         if (Downloading.List.GetChildCount() == 0)
             Downloading.Visible = false;
 
-        gle.StopDownloadStats();
-        installer.Install();
+        try
+        {
+            installer.Install();
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"Install failed: {ex}");
+            gle.ToggleDownloadProgress(false);
+            Available.List.AddChild(gle);
+            AppDialogs.MessageDialog.ShowMessage(
+                Tr("Install Failed"),
+                string.Format(Tr("Download finished, but install failed:\n{0}"), ex.Message));
+            return;
+        }
 
         CentralStore.Versions.Add(installer.GodotVersion);
 
-        if (CentralStore.Versions.Count == 0)
+        if (CentralStore.Versions.Count == 1)
         {
             CentralStore.Settings.DefaultEngine = installer.GodotVersion.Id;
             gle.ToggleDefault(true);
@@ -454,9 +468,11 @@ public partial class GodotPanel   : Panel
         else
             installer = GodotInstaller.FromGithub(gle.GithubVersion, IsMono());
 
-        installer.Connect("chunk_received", Callable.From<int>(OnChunkReceived));
-        installer.Connect("download_completed", Callable.From(() => OnDownloadCompleted(installer, gle)));
-        installer.Connect("download_failed", Callable.From<GodotInstaller, GDCSHTTPClient.Status>((inst, status) => OnDownloadFailed(inst, status, gle)));
+        installer.Connect("chunk_received", Callable.From<int>(gle.OnChunkReceived));
+        // Signal signature is (GodotInstaller self); match it so the handler actually runs.
+        installer.Connect("download_completed", Callable.From((GodotInstaller inst) => OnDownloadCompleted(inst, gle)));
+        installer.Connect("download_failed", Callable.From((GodotInstaller inst, int status) =>
+            OnDownloadFailed(inst, (GDCSHTTPClient.Status)status, gle)));
 
         gle.ToggleDownloadProgress(true);
 

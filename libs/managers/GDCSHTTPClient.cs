@@ -168,7 +168,7 @@ public partial class GDCSHTTPClient   : Node {
 					resp = new HTTPResponse();
 					resp.ResponseCode = (int)response.StatusCode;
 					resp.Headers = BuildHeaders(response);
-					EmitSignal("headers_received", resp.Headers);
+					EmitOnMain("headers_received", resp.Headers);
 
 					// Stream the body, reporting progress as chunks arrive.
 					using (var stream = await response.Content.ReadAsStreamAsync())
@@ -181,7 +181,8 @@ public partial class GDCSHTTPClient   : Node {
 								break;
 							}
 							ms.Write(buffer, 0, read);
-							EmitSignal("chunk_received", read);
+							// HTTP continuations may run off the main thread; marshal UI signals.
+							EmitOnMain("chunk_received", read);
 						}
 						resp.BodyRaw = ms.ToArray();
 					}
@@ -206,8 +207,13 @@ public partial class GDCSHTTPClient   : Node {
 			GD.PrintErr($"Request error for {path}: {ex.Message}");
 			return null;
 		}
-		EmitSignal("request_completed");
+		EmitOnMain("request_completed");
 		return resp;
+	}
+
+	void EmitOnMain(StringName signal, params Variant[] args) {
+		// HTTP async continuations may run off the main thread; marshal UI signals.
+		Callable.From(() => EmitSignal(signal, args)).CallDeferred();
 	}
 
 	public bool SuccessConnect(Status result, bool dialogErrors = false, bool printErrors = true) {
