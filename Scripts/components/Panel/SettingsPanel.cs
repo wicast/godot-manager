@@ -208,7 +208,7 @@ public partial class SettingsPanel   : Panel
 		updateActionButtons();
 
 		GetParent<TabContainer>().Connect("tab_changed", Callable.From<int>(OnPageChanged));
-		_versionInfo.Text = $"Version {VERSION.GodotManager}-{VERSION.Channel}";
+		_versionInfo.Text = $"Version {VERSION.GodotManager}";
 
 		_updateCheckInterval.Disabled = !_checkForUpdates.ButtonPressed;
 
@@ -1316,7 +1316,7 @@ public partial class SettingsPanel   : Panel
 		{
 			if (iembEvent.Pressed && iembEvent.ButtonIndex == MouseButton.Left)
 			{
-				OS.ShellOpen("https://github.com/eumario/godot-manager");
+				OS.ShellOpen("https://github.com/wicast/godot-manager");
 			}
 		}
 	}

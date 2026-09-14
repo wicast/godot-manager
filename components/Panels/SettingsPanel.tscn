@@ -831,21 +831,23 @@ offset_top = 31.0
 offset_right = 792.0
 offset_bottom = 50.0
 theme_override_fonts/font = ExtResource("4")
-text = "Version 0.1.0"
+text = "Version 0.3.0"
 
 [node name="EmailWebsite" type="RichTextLabel" parent="VB/MC/TC/About/MC/VB/HBHeader/VB"]
 offset_top = 54.0
 offset_right = 792.0
-offset_bottom = 94.0
-custom_minimum_size = Vector2(0, 40)
+offset_bottom = 110.0
+custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_fonts/normal_font = ExtResource("13")
 bbcode_enabled = true
-bbcode_text = "Created By: Mario Steele <[url=mailto:mario@ruby-im.net]mario@ruby-im.net[/url]>
-Website: [url=http://github.com/eumario/godot-manager]http://github.com/eumario/godot-manager[/url]"
-text = "Created By: Mario Steele <mario@ruby-im.net>
-Website: http://github.com/eumario/godot-manager"
+bbcode_text = "Original Author: Mario Steele <[url=mailto:mario@ruby-im.net]mario@ruby-im.net[/url]>
+Maintainer: wicast <[url=mailto:wicastchen@hotmail.com]wicastchen@hotmail.com[/url]>
+Website: [url=https://github.com/wicast/godot-manager]https://github.com/wicast/godot-manager[/url]"
+text = "Original Author: Mario Steele <mario@ruby-im.net>
+Maintainer: wicast <wicastchen@hotmail.com>
+Website: https://github.com/wicast/godot-manager"
 
 [node name="VB2" type="VBoxContainer" parent="VB/MC/TC/About/MC/VB/HBHeader"]
 offset_left = 864.0
@@ -928,6 +930,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 120
 
 [node name="VB" type="VBoxContainer" parent="VB/MC/TC/About/MC/VB/CenterContainer/HB"]
+visible = false
 offset_right = 231.0
 offset_bottom = 234.0
 theme_override_constants/separation = 20
@@ -994,6 +997,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Label4" type="Label" parent="VB/MC/TC/About/MC/VB/CenterContainer/HB/VB2"]
+visible = false
 offset_top = 127.0
 offset_right = 190.0
 offset_bottom = 154.0
@@ -1005,6 +1009,7 @@ __meta__ = {
 }
 
 [node name="Discord" type="TextureRect" parent="VB/MC/TC/About/MC/VB/CenterContainer/HB/VB2"]
+visible = false
 offset_top = 174.0
 offset_right = 190.0
 offset_bottom = 234.0
