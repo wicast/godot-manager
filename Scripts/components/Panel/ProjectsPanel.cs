@@ -1352,16 +1352,29 @@ public partial class ProjectsPanel   : Panel
         }
         else
         {
+            // Missing engine ids must not throw — sort them last with empty tag.
+            static string VersionTag(ProjectFile pf)
+            {
+                var gv = CentralStore.Instance.FindVersion(pf.GodotVersion);
+                return gv?.Tag ?? "";
+            }
+
+            static bool IsMono(ProjectFile pf)
+            {
+                var gv = CentralStore.Instance.FindVersion(pf.GodotVersion);
+                return gv?.IsMono ?? false;
+            }
+
             if (_godotVersion.Direction == HeaderButton.SortDirection.Up)
             {
-                fav = CentralStore.Projects.OrderBy(pf => CentralStore.Instance.GetVersion(pf.GodotVersion).Tag)
-                        .ThenBy(pf => !CentralStore.Instance.GetVersion(pf.GodotVersion).IsMono);
+                fav = CentralStore.Projects.OrderBy(VersionTag)
+                        .ThenBy(IsMono);
                 non_fav = null;
             }
             else
             {
-                fav = CentralStore.Projects.OrderByDescending(pf => CentralStore.Instance.GetVersion(pf.GodotVersion).Tag)
-                        .ThenByDescending(pf => !CentralStore.Instance.GetVersion(pf.GodotVersion).IsMono);
+                fav = CentralStore.Projects.OrderByDescending(VersionTag)
+                        .ThenByDescending(IsMono);
                 non_fav = null;
             }
         }

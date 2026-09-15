@@ -170,7 +170,7 @@ public partial class CentralStore   {
 		var query = from gv in Versions
 					where gv.Id == id
 					select gv;
-		return query.First<GodotVersion>();
+		return query.FirstOrDefault<GodotVersion>();
 	}
 
 	public bool HasCategory(string name) {
