@@ -162,7 +162,7 @@ public partial class AssetLibPreview   : ReferenceRect
             dlq.Push(dldIcon);
         } else {
             if (sIconPath.EndsWith(".gif")) {
-                _Icon.Texture = GifTexture.Load(sIconPath);
+                GifTexture.LoadInto(_Icon, sIconPath);
             } else {
                 Texture2D icon = Util.LoadImage(sIconPath);
                 if (icon == null)
@@ -210,7 +210,7 @@ public partial class AssetLibPreview   : ReferenceRect
             } else {
                 dldPreviews.Add(null);
                 if (iconPath.EndsWith(".gif")) {
-                    preview.Texture = GifTexture.Load(iconPath);
+                    GifTexture.LoadInto(preview, iconPath);
                 } else {
                     Texture2D icon = Util.LoadImage(iconPath);
                     if (icon == null)
@@ -378,7 +378,7 @@ public partial class AssetLibPreview   : ReferenceRect
 	void OnImageDownloaded(ImageDownloader dld) {
         if (dld == dldIcon) {
             if (sIconPath.EndsWith(".gif")) {
-                _Icon.Texture = GifTexture.Load(sIconPath);
+                GifTexture.LoadInto(_Icon, sIconPath);
             } else {
                 Texture2D icon = Util.LoadImage(sIconPath);
                 if (icon == null)
@@ -417,7 +417,7 @@ public partial class AssetLibPreview   : ReferenceRect
 		if (File.Exists(iconPath.GetOSDir().NormalizePath()))
 		{
             if (iconPath.EndsWith(".gif")) {
-                preview.Texture = GifTexture.Load(iconPath);
+                GifTexture.LoadInto(preview, iconPath);
             } else {
                 Texture2D icon = Util.LoadImage(iconPath);
                 if (icon == null)
