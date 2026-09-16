@@ -59,7 +59,7 @@ public partial class GDCSHTTPClient   : Node {
 	}
 
 	public static string GetUserAgent() {
-		return $"User-Agent: Godot-Manager/{VERSION.GodotManager}-{VERSION.Channel} ({Platform.OperatingSystem})";
+		return $"Godot-Manager/{VERSION.GodotManager}-{VERSION.Channel} ({Platform.OperatingSystem})";
 	}
 
 	private void ApplyDefaultHeaders(HttpRequestMessage request) {

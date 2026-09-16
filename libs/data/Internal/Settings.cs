@@ -87,14 +87,21 @@ public partial class Settings   : GodotObject {
 		ScanDirs.Add(ProjectPath);
 
 		// Asset Library Mirrors
-		data["name"] = "godotengine.org";
-		data["url"] = "https://godotengine.org/asset-library/api/";
-		AssetMirrors.Add(data.Duplicate());
-		CurrentAssetMirror = data.Duplicate();
-		data.Clear();
-		data["name"] = "localhost";
-		data["url"] = "http://localhost/asset-library/api/";
-		AssetMirrors.Add(data.Duplicate());
-		data.Clear();
+		if (AssetMirrors.Count == 0) {
+			data["name"] = "godotengine.org";
+			data["url"] = "https://godotengine.org/asset-library/api/";
+			AssetMirrors.Add(data.Duplicate());
+			CurrentAssetMirror = data.Duplicate();
+			data.Clear();
+			data["name"] = "localhost";
+			data["url"] = "http://localhost/asset-library/api/";
+			AssetMirrors.Add(data.Duplicate());
+			data.Clear();
+		}
+		if (CurrentAssetMirror == null || !CurrentAssetMirror.ContainsKey("url"))
+			CurrentAssetMirror = AssetMirrors.Count > 0 ? AssetMirrors[0] : new Dictionary<string, string> {
+				{ "name", "godotengine.org" },
+				{ "url", "https://godotengine.org/asset-library/api/" }
+			};
 	}
 }

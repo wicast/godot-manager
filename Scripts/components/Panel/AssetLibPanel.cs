@@ -104,11 +104,20 @@ public partial class AssetLibPanel   : Panel
         lastSearchRequest = DateTime.Now - TimeSpan.FromMinutes(6);
         GetParent<TabContainer>().Connect("tab_changed", Callable.From<int>(OnPageChanged));
         _mirrorSite.Clear();
+        if (CentralStore.Settings.AssetMirrors == null || CentralStore.Settings.AssetMirrors.Count == 0)
+        {
+            CentralStore.Settings.AssetMirrors.Add(new Dictionary<string, string> {
+                { "name", "godotengine.org" },
+                { "url", "https://godotengine.org/asset-library/api/" }
+            });
+        }
         foreach (Dictionary<string, string> mirror in CentralStore.Settings.AssetMirrors) {
             var indx = _mirrorSite.GetItemCount();
             _mirrorSite.AddItem(mirror["name"]);
-            _mirrorSite.SetItemMetadata(indx,mirror["url"]);
+            _mirrorSite.SetItemMetadata(indx, mirror["url"]);
         }
+        if (_mirrorSite.GetItemCount() > 0)
+            _mirrorSite.Selected = 0;
 
         // Translations for Options/Menu Items
         _sortBy.UpdateTr(0, Tr("Recently Updated"));

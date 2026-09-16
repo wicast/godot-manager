@@ -66,10 +66,9 @@ namespace AssetLib {
 
 			if (!client.SuccessConnect(cres.Result))
 				return ret;
-			
-			//string path = "/asset-library/api/configure";
-			string path = $"{uri.AbsolutePath}configure";
 
+			string basePath = uri.AbsolutePath.TrimEnd('/') + "/";
+			string path = $"{basePath}configure";
 			if (templatesOnly)
 				path += "?type=project";
 			else
@@ -90,9 +89,9 @@ namespace AssetLib {
 				return ret;
 			}
 
-			if (result.ResponseCode == 200)
+			if (result.ResponseCode == 200 && !string.IsNullOrEmpty(result.Body))
 				ret = JsonConvert.DeserializeObject<ConfigureResult>(result.Body, Github.DefaultSettings.defaultJsonSettings);
-			
+
 			mutex.Unlock();
 
 			return ret;
@@ -116,8 +115,8 @@ namespace AssetLib {
 			if (!client.SuccessConnect(cres.Result))
 				return ret;
 			
-			//string path = $"/asset-library/api/asset{query}";
-			string path = $"{uri.AbsolutePath}asset{uri.Query}";
+			string basePath = uri.AbsolutePath.TrimEnd('/') + "/";
+			string path = $"{basePath}asset{uri.Query}";
 			var tresult = client.MakeRequest(path);
 			while (!tresult.IsCompleted)
 				await this.IdleFrame();

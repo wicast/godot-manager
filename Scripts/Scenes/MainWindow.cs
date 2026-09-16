@@ -146,7 +146,25 @@ public partial class MainWindow   : Control
 
 	void OnPageButton_Clicked(PageButton pb)
 	{
-		_notebook.CurrentTab = _buttons.IndexOf(pb);
+		// Match by name so sidebar order can differ from TabContainer child order.
+		// Godot tab is named "Godot", news tab is named "NewsPanel".
+		string key = pb.Name;
+		if (key == "News")
+			key = "NewsPanel";
+
+		for (int i = 0; i < _notebook.GetTabCount(); i++)
+		{
+			if (_notebook.GetTabControl(i)?.Name == key)
+			{
+				_notebook.CurrentTab = i;
+				return;
+			}
+		}
+
+		// Fallback to index if names do not match.
+		int idx = _buttons.IndexOf(pb);
+		if (idx >= 0 && idx < _notebook.GetTabCount())
+			_notebook.CurrentTab = idx;
 	}
 
 	[SignalHandler("tree_exiting")]

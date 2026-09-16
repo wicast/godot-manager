@@ -88,7 +88,7 @@ namespace Github {
 
 		public async Task<Release> GetLatestManagerRelease() {
 			Release ret = null;
-			Uri uri = new Uri("https://api.github.com/eumario/godot-manager/releases/latest");
+			Uri uri = new Uri("https://api.github.com/repos/wicast/godot-manager/releases/latest");
 			if (CentralStore.Settings.UseProxy)
 				client.SetProxy(CentralStore.Settings.ProxyHost, CentralStore.Settings.ProxyPort, uri.Scheme == "https");
 			else

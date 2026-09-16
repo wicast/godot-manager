@@ -147,12 +147,13 @@ public partial class NewsPanel   : Panel
         _client.Close();
 
         var result = tresult.Result;
-        
-        if (result.ResponseCode != 200)
+
+        if (result == null || result.ResponseCode != 200 || string.IsNullOrEmpty(result.Body))
         {
             CleanupClient();
             AppDialogs.BusyDialog.HideDialog();
-            AppDialogs.MessageDialog.ShowMessage("Fetch News Error", $"Failed to fetch news entries from website.  (Error Code: {result.ResponseCode}");
+            AppDialogs.MessageDialog.ShowMessage("Fetch News Error",
+                $"Failed to fetch news entries from website. (Error Code: {result?.ResponseCode ?? 0})");
             return;
         }
 
@@ -183,45 +184,48 @@ public partial class NewsPanel   : Panel
 
             newsItem.Headline = "    " + nitem["title"].AsString();
             newsItem.Byline = $"    {nitem["dc:creator"].AsString()} - {nitem["pubDate"].AsString().Replace("&nbsp;", " ")}";
-            newsItem.Url = nitem["guid"].AsString();
+            newsItem.Url = nitem.ContainsKey("guid") ? nitem["guid"].AsString() : nitem["link"].AsString();
             newsItem.Blerb = nitem["description"].AsString();
 
-            Uri uri = new Uri(nitem["image"].AsString());
-            string imgPath = $"{CentralStore.Settings.CachePath}/images/news/{uri.AbsolutePath.GetFile()}";
-            if (!SFile.Exists(imgPath.GetOSDir().NormalizePath()))
+            if (nitem.ContainsKey("image") && !string.IsNullOrEmpty(nitem["image"].AsString()))
             {
-                ImageDownloader dld = new ImageDownloader(nitem["image"].AsString(), imgPath);
-                _queue.Push(dld);
-                newsItem.SetMeta("imgPath", imgPath);
-                newsItem.SetMeta("dld", dld);
+                Uri uri = new Uri(nitem["image"].AsString());
+                string imgPath = $"{CentralStore.Settings.CachePath}/images/news/{uri.AbsolutePath.GetFile()}";
+                if (!SFile.Exists(imgPath.GetOSDir().NormalizePath()))
+                {
+                    ImageDownloader dld = new ImageDownloader(nitem["image"].AsString(), imgPath);
+                    _queue.Push(dld);
+                    newsItem.SetMeta("imgPath", imgPath);
+                    newsItem.SetMeta("dld", dld);
+                }
+                else
+                    newsItem.Image = imgPath.GetOSDir().NormalizePath();
             }
-            else
-                newsItem.Image = imgPath.GetOSDir().NormalizePath();
 
             var avatar = CentralStore.AuthorEntries.FirstOrDefault(x => x.Name == nitem["dc:creator"].AsString());
             if (avatar is null) avatar = CentralStore.AuthorEntries.FirstOrDefault(x => x.Name == "default");
-            if (avatar != null)
+            if (avatar != null && !string.IsNullOrEmpty(avatar.AvatarUrl))
             {
-                uri = new Uri(BASE_URI, avatar.AvatarUrl);
-                imgPath = $"{CentralStore.Settings.CachePath}/images/news/{uri.AbsolutePath.GetFile()}";
-                if (!SFile.Exists(imgPath.GetOSDir().NormalizePath()))
+                Uri avatarUri = new Uri(BASE_URI, avatar.AvatarUrl);
+                string avatarPath = $"{CentralStore.Settings.CachePath}/images/news/{avatarUri.AbsolutePath.GetFile()}";
+                if (!SFile.Exists(avatarPath.GetOSDir().NormalizePath()))
                 {
                     if (_queue.Queued.All(x => x.Tag != nitem["dc:creator"].AsString()))
                     {
-                        ImageDownloader dld = new ImageDownloader(uri.ToString(), imgPath, nitem["dc:creator"].AsString());
+                        ImageDownloader dld = new ImageDownloader(avatarUri.ToString(), avatarPath, nitem["dc:creator"].AsString());
                         _queue.Push(dld);
-                        newsItem.SetMeta("avatarPath", imgPath);
+                        newsItem.SetMeta("avatarPath", avatarPath);
                         newsItem.SetMeta("avatarDld", dld);
                     }
                     else
                     {
                         var dld = _queue.Queued.FirstOrDefault(x => x.Tag == nitem["dc:creator"].AsString());
-                        newsItem.SetMeta("avatarPath", imgPath);
+                        newsItem.SetMeta("avatarPath", avatarPath);
                         newsItem.SetMeta("avatarDld", dld);
                     }
                 }
                 else
-                    newsItem.Avatar = imgPath.GetOSDir().NormalizePath();
+                    newsItem.Avatar = avatarPath.GetOSDir().NormalizePath();
             }
 
             NewsList.AddChild(newsItem);
